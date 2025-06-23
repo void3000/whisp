@@ -1,0 +1,13 @@
+[package]
+name = "whisp"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "whisp"
+path = "main.rs"
+
+[dependencies]
+lexer = { path = "lexer" }
+parser = { path = "parser" }
+runtime = { path = "runtime" }
