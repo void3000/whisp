@@ -136,186 +136,236 @@ max(7, 12); // 12
 
 ### LL(k) Grammar
 
-An **LL(k) grammar** is a type of context-free grammar that can be parsed from left to right, constructing a leftmost derivation of the input string using at most **k tokens of lookahead**. The name "LL(k)" comes from this parsing strategy: the first "L" stands for scanning the input from **Left to right**, the second "L" stands for producing a **Leftmost derivation**, and "k" represents the number of lookahead tokens used to guide parsing decisions. 
+An **LL(k) grammar** is a type of context-free grammar that can be parsed from 
+left to right, constructing a leftmost derivation of the input string using at 
+most **k tokens of lookahead**. The name "LL(k)" comes from this parsing 
+strategy: the first "L" stands for scanning the input from **Left to right**, 
+the second "L" stands for producing a **Leftmost derivation**, and "k" 
+represents the number of lookahead tokens used to guide parsing decisions. 
 
-LL(k) grammars are particularly important because they allow for **predictive parsing**, where the parser can choose which rule to apply based on a fixed number of upcoming tokens, without requiring backtracking or guessing. LL(1) grammars, where only one token of lookahead is needed, are the most common and desirable subclass, often used in recursive descent parsers. 
+LL(k) grammars are particularly important because they allow for **predictive** 
+**parsing**, where the parser can choose which rule to apply based on a fixed 
+number of upcoming tokens, without requiring backtracking or guessing. LL(1) 
+grammars, where only one token of lookahead is needed, are the most common and 
+desirable subclass, often used in recursive descent parsers. 
 
-However, not all grammars are LL(1); some may require more lookahead to resolve ambiguities, making them LL(k) for higher values of k. If a grammar is not LL(k) for any finite k, it typically cannot be parsed top-down without extra techniques like backtracking or left-factoring. Compared to bottom-up parsers (like LR parsers), LL parsers are simpler but more limited in the class of languages they can handle.
+However, not all grammars are LL(1); some may require more lookahead to resolve
+ambiguities, making them LL(k) for higher values of k. If a grammar is not LL(k) 
+for any finite k, it typically cannot be parsed top-down without extra techniqu-
+es like backtracking or left-factoring. Compared to bottom-up parsers (like LR -
+parsers), LL parsers are simpler but more limited in the class of languages they 
+can handle.
 
-#### Whisp LL(k) Grammar
+#### Whisp Grammar Construction
 
 For the grammar notation we will be using [BNF notation](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form)
 
+##### Precedence
+
+| Precedence | Operators                       |
+| ---------: | ------------------------------- |
+|          1 | `[]` (array indexing), literals |
+|          2 | `* / %`                         |
+|          3 | `+ -`                           |
+|          4 | Comparison: `== < > <= >=`      |
+|          5 | Logical AND: `and`              |
+|          6 | Logical OR: `or`                |
+|          7 | Assignment: `=`                 |
+
+
+Let's look at the following expression and see why precedence matters.
+
+**Expression 1**
+
 ```
-Program         ::= Stmts
+1 + 2
+```
 
-Stmts           ::= Stmt Stmts
-                  | ε
+```
+    +
+   / \
+  1   2
+```
 
-Stmt            ::= Expr ';'
-                  | LetBinding
-                  | ControlFlow
-                  | Function
-                  | Block
+**Expression 2**
+```
+1 + 2 * 3
+```
+Without precedence, the expression evaluates to `9` which is clearly wrong to a 
+smart individual.
 
-Expr            ::= ArithExpr
-                  | BoolExpr
-                  | AssignmentExpr
-                  | Literal
-                  | Identifier
-                  | ArrayIndex
-                  | Call
+```
+      *
+     / \
+    +   3
+   / \
+  1   2
+```
 
-AssignmentExpr  ::= Identifier '=' Expr
+With precedence, the expression evaluates to `7` which is correct.
 
-ArithExpr       ::= ArithTerm ArithExprTail
-ArithExprTail   ::= ArithOp ArithTerm ArithExprTail
-                  | ε
+Explanation:
 
-BoolExpr        ::= BoolTerm BoolExprTail
-BoolExprTail    ::= BoolOp BoolTerm BoolExprTail
-                  | ε
+  - consume operand `1` into a operand stack, advance to the next token,
+  - consume operation `+` into a operation stack, and advance,
+  - consume operand `2` into a stack, advance,
+  - consume operation `*`, since it has high precedence than `+` push into stack,
+  - comsume operand `3` into stack.
+  - pop operation from operation stack, `*` and pop two operands from stack,
+  - construct a node and push into operand stack, `(2 3 *)`,
+  - repeat the process andyou'll end up with the following results,
 
-LogicalExpr     ::= ArithTerm LogicalOp ArithTerm
+```
+1 2 3 * +
+```
 
-BoolTerm        ::= Bool
-                  | LogicalExpr
-                  | Identifier
+```
+      +
+     / \
+    1   *
+       / \
+      2   3
+```
 
-ControlFlow     ::= IfStatement
-                  | WhileStatement
-                  | ForStatement
-                  | Return
+The now is how can we create a grammar that does not necessary have to make use 
+of a stack to construct an AST? The answer is actually infront of our eyes: 
+**simply evaluate this expression `1 2 3 * +` backwards**. Doing so, we would
+get the following grammar:
 
-ArithOp         ::= '+' | '-' | '*' | '/' | '%'
-BoolOp          ::= 'and' | 'or'
-LogicalOp       ::= '==' | '>' | '<' | '>=' | '<='
+```
+Expr      ::= AddExpr
 
-ArithTerm       ::= Int
-                  | Identifier
+AddExpr   ::= MulExpr AddExpr'
+AddExpr'  ::= '+' MulExpr | ε
 
-Literal         ::= Int
-                  | String
-                  | Bool
-                  | Array
+MulExpr   ::= Int MulExpr'
+MulExpr'  ::= '*' Int MulExpr' | ε
+```
 
-Array             ::= '[' ArrayElements ']'
+##### LL(k) Grammar
+
+```
+Program           ::= Stmts
+
+Stmts             ::= Stmt Stmts
+                    | ε
+
+Stmt              ::= Expr ';'
+                    | LetBinding
+                    | ControlFlow
+                    | Function
+                    | Block
+
+Expr              ::= AssignmentExpr
+
+AssignmentExpr    ::= Identifier '=' Expr
+                    | ArithmeticExpr
+
+ArithmeticExpr    ::= OrExpr
+
+OrExpr            ::= AndExpr OrExprTail
+OrExprTail        ::= 'or' AndExpr OrExprTail
+                    | ε
+
+AndExpr           ::= CompExpr AndExprTail
+AndExprTail       ::= 'and' CompExpr AndExprTail
+                    | ε
+
+CompExpr          ::= AddSubExpr CompExprTail
+CompExprTail      ::= ('==' | '<' | '>' | '<=' | '>=') AddSubExpr CompExprTail
+                    | ε
+
+AddSubExpr        ::= MulDivExpr AddSubExprTail
+AddSubExprTail    ::= ('+' | '-') MulDivExpr AddSubExprTail
+                    | ε
+
+MulDivExpr        ::= PrimaryExpr MulDivExprTail
+MulDivExprTail    ::= ('*' | '/' | '%') PrimaryExpr MulDivExprTrail
+                    | ε
+
+PrimaryExpr       ::= Literal
+                    | Identifier
+                    | Call
+                    | ArrayIndex
+                    | '(' Expr ')'
+
+ControlFlow       ::= IfStatement
+                    | WhileStatement
+                    | ForStatement
+                    | Return
+
+BoolExpr          ::= BoolOrExpr
+
+BoolOrExpr        ::= BoolAndExpr BoolOrExprTail
+BoolOrExprTrail   ::= 'or' BoolTerm BoolAndExpr BoolOrExprTrail
+                    | ε
+
+BoolAndExpr       ::= BoolTerm BoolAndExprTail
+BoolAndExprTail   ::= 'and' BoolTerm BoolAndExprTail
+                    | ε
+
+BoolTerm          ::= Bool
+                    | ComparisonExpr
+                    | Identifier
+                    | '(' BoolExpr ')'
+
+ComparisonExpr    ::= Operand ('==' | '>' | '<' | '>=' | '<=') Operand
+
+Operand           ::= Int
+                    | Identifier
+                    | ArrayIndex
+
+Literal           ::= Int
+                    | String
+                    | Bool
+                    | Array
+
+Array             ::= 'array' '[' ArrayElements ']'
 ArrayElements     ::= Expr ArrayElementsTail
-                   | ε
+                    | ε
 ArrayElementsTail ::= ',' Expr ArrayElementsTail
-                   | ε
+                    | ε
+
 ArrayIndex        ::= Identifier '[' (Int | Identifier) ']'
 
-LetBinding      ::= 'let' Identifier '=' Expr ';'
+LetBinding        ::= 'let' Identifier '=' Expr ';'
 
-IfStatement     ::= 'if' BoolExpr Block IfStatementTail
+IfStatement       ::= 'if' BoolExpr Block IfStatementTail
 
-IfStatementTail ::= 'elif' BoolExpr Block IfStatementTail
-                  | ElseStatement
-                  | ε
+IfStatementTail   ::= 'elif' BoolExpr Block IfStatementTail
+                    | ElseStatement
+                    | ε
 
-ElseStatement   ::= 'else' Block
+ElseStatement     ::= 'else' Block
 
-WhileStatement  ::= 'while' BoolExpr Block
+WhileStatement    ::= 'while' BoolExpr Block
 
-ForStatement    ::= 'for' Identifier 'in' Array Block
+ForStatement      ::= 'for' Identifier 'in' Array Block
 
-Function        ::= 'def' Identifier '(' Params ')' Block
+Function          ::= 'def' Identifier '(' Params ')' Block
 
-Call            ::= Identifier '(' Args ')'
+Call              ::= Identifier '(' Args ')'
 
-Params          ::= Identifier ParamsTrail
-                  | ε
+Params            ::= Identifier ParamsTrail
+                    | ε
 
-ParamsTrail     ::= ',' Identifier ParamsTrail
-                  | ε
+ParamsTrail       ::= ',' Identifier ParamsTrail
+                    | ε
 
-Args            ::= ArgTerm ArgsTail
-                  | ε
-ArgsTail        ::= ',' ArgTerm ArgsTail
-                  | ε
+Args              ::= ArgTerm ArgsTail
+                    | ε
+ArgsTail          ::= ',' ArgTerm ArgsTail
+                    | ε
 
-ArgTerm         ::= Literal
-                  | Identifier
+ArgTerm           ::= Literal
+                    | Identifier
 
-Block           ::= '{' Stmts '}'
+Block             ::= '{' Stmts '}'
 
-Return          ::= 'return' Expr ';'
+Return            ::= 'return' Expr ';'
 
 terminal Int;
 terminal Bool;
 terminal String;
 terminal Identifier;
 ```
-
-#### What the Grammar Allows
-
-##### Basic Program Structure
-- A `Program` consists of zero or more `Stmt`s.
-- Statements can be:
-  - Expressions (arithmetic or boolean)
-  - Literals (e.g., `true;`, `42;`, `"hi";`)
-  - Variable declarations (`let`)
-  - Control flow (`if`, `while`, `for`, `return`)
-  - Function declarations and function calls
-  - Blocks (`{ ... }`)
-
-##### Arithmetic Expressions
-- Allowed: `1 + 2`, `x - 3 * 4 % 5`, `a / b + c`
-- Operands must be:
-  - `Int`
-  - `Identifier` (assumed to refer to integer values)
-- No mixing with booleans or strings.
-
-##### Boolean Expressions
-- Allowed:
-  - Combinations of `BoolTerm`s using `and`, `or`
-  - Examples: `true and false`, `x and y`
-- `BoolTerm`s can be:
-  - Boolean literals (`true`, `false`)
-  - Logical comparisons like `1 == 1`, `x > y`
-  - Identifiers (e.g., `flag`, assumed to be boolean)
-
-##### Logical Comparisons
-- `LogicalExpr ::= ArithTerm LogicalOp ArithTerm`
-- Allowed:
-  - `3 > 2`, `x == y + 1`, `a <= b % 2`
-- Must compare arithmetic terms only (no booleans or strings).
-- Used within `BoolExpr` via `BoolTerm`.
-
-##### Control Flow
-- `if`, `while`, and `elif` conditions must be valid `BoolExpr`s
-- Encourages clean boolean logic like: `if x > 2 and y < 5 { ... }`
-
-##### Literals
-- Can appear as standalone statements: `true;`, `42;`, `["a", "b"];`
-
-##### Arrays
-- Arrays: `[1, 2 + 3, x]`
-- Elements must be valid `Expr`s
-
-##### Functions
-- Declare with: `def name(param1, param2) { ... }`
-- Parameters must be identifiers
-- Arguments must be `Expr`s (can be arithmetic, boolean, identifiers)
-
-#### What the Grammar Disallows
-
-##### Mixed-Type Arithmetic
-- Invalid: `true + 1`, `"hello" - "world"`, `false * x`
-
-##### Chained Boolean Logic on Non-Boolean Values
-- Disallowed:
-  - `1 and 1` (invalid: `1` is not boolean)
-  - `true and 3 > 2` (invalid unless `3 > 2` is boxed properly)
-
-##### String Comparisons
-- Not allowed (e.g., `"a" == "b"` is invalid)
-
-##### Functions as First-Class Values
-- Cannot assign functions to variables or pass them as arguments
-
-##### Complex Inline Comparisons
-- `ArithTerm` does not support grouping via parentheses
-- Expressions like `(x + y) > (z - 1)` not allowed unless extended
-
