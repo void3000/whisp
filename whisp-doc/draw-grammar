@@ -1,0 +1,92 @@
+Program = Stmts ;
+
+Stmts = { Stmt } ;
+
+Stmt = Expr,";" 
+     | LetBinding 
+     | ControlFlow 
+     | Function 
+     | Block ;
+
+Expr = AssignmentExpr ;
+
+AssignmentExpr = Identifier,"=",Expr 
+               | ArithmeticExpr ;
+
+ArithmeticExpr = OrExpr ;
+
+OrExpr = AndExpr ,{ "or" ,AndExpr } ;
+
+AndExpr = CompExpr ,{ "and" ,CompExpr } ;
+
+CompExpr = AddSubExpr, { ( "==" | "<" | ">" | "<=" | ">=" ) ,AddSubExpr } ;
+
+AddSubExpr = MulDivExpr ,{ ( "+" | "-" ) ,MulDivExpr } ;
+
+MulDivExpr = PrimaryExpr ,{ ( "*" | "/" | "%" ), PrimaryExpr } ;
+
+PrimaryExpr = Literal 
+            | Identifier 
+            | Call 
+            | ArrayIndex 
+            | "(" ,Expr ,")" ;
+
+ControlFlow = IfStatement 
+            | WhileStatement 
+            | ForStatement 
+            | Return ;
+
+BoolExpr = BoolOrExpr ;
+
+BoolOrExpr = BoolAndExpr ,{ "or", BoolAndExpr } ;
+
+BoolAndExpr = BoolTerm, { "and", BoolTerm } ;
+
+BoolTerm = Bool 
+         | ComparisonExpr 
+         | Identifier 
+         | "(" ,BoolExpr ,")" ;
+
+ComparisonExpr = Operand ,( "==" | ">" | "<" | ">=" | "<=" ) ,Operand ;
+
+Operand = Int 
+        | Identifier 
+        | ArrayIndex ;
+
+Literal = Int 
+        | String 
+        | Bool 
+        | Array ;
+
+Array = "array" ,"[" , [ArrayElements ],"]" ;
+
+ArrayElements = Expr, { "," ,Expr } ;
+
+ArrayIndex = Identifier ,"[" ,( Int | Identifier ), "]" ;
+
+LetBinding = "let", Identifier, "=" ,Expr ,";" ;
+
+IfStatement = "if", BoolExpr, Block, [ IfStatementTail ] ;
+
+IfStatementTail = { "elif", BoolExpr, Block }, [ ElseStatement ] ;
+
+ElseStatement = "else",Block ;
+
+WhileStatement = "while" ,BoolExpr ,Block ;
+
+ForStatement = "for" ,Identifier, "in" ,Array, Block ;
+
+Function = "def" ,Identifier ,"(" ,[ Params ] ,")" ,Block ;
+
+Call = Identifier, "(" ,[ Args ], ")" ;
+
+Params = Identifier, { ",", Identifier } ;
+
+Args = ArgTerm, { "," ,ArgTerm } ;
+
+ArgTerm = Literal 
+        | Identifier ;
+
+Block = "{" ,Stmts, "}" ;
+
+Return = "return", Expr, ";" ;

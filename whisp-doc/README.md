@@ -369,3 +369,9 @@ terminal Bool;
 terminal String;
 terminal Identifier;
 ```
+
+##### Visual Representation
+
+Visual representation of the grammar was generated with [DrawGrammar](https://jacquev6.github.io/DrawGrammar/) 
+
+![Whisp grammar](grammar.png)
