@@ -1,3 +1,7 @@
+### Design Diagram
+
+![diagram](whisp-bkg.png)
+
 ### Grammar Specific Features
 
 | **Feature**          | **Description**                                                                    |

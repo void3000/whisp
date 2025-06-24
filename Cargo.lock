@@ -3,22 +3,17 @@
 version = 4
 
 [[package]]
-name = "lexer"
-version = "0.1.0"
-
-[[package]]
-name = "parser"
-version = "0.1.0"
-
-[[package]]
-name = "runtime"
-version = "0.1.0"
-
-[[package]]
 name = "whisp"
 version = "0.1.0"
-dependencies = [
- "lexer",
- "parser",
- "runtime",
-]
+
+[[package]]
+name = "whisp-lexer"
+version = "0.1.0"
+
+[[package]]
+name = "whisp-parser"
+version = "0.1.0"
+
+[[package]]
+name = "whisp-runtime"
+version = "0.1.0"
