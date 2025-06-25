@@ -13,6 +13,6 @@ edition = "2024"
 
 [patch.crates-io]
 whisp = { path = "whisp" }
-whisp-lexer = { path = "whisp-lexer" }
-whisp-parser = { path = "whisp-parser" }
-whisp-runtime = { path = "whisp-runtime" }
+whisp_lexer = { path = "whisp-lexer" }
+whisp_parser = { path = "whisp-parser" }
+whisp_runtime = { path = "whisp-runtime" }

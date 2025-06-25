@@ -7,13 +7,19 @@ name = "whisp"
 version = "0.1.0"
 
 [[package]]
-name = "whisp-lexer"
+name = "whisp_lexer"
 version = "0.1.0"
 
 [[package]]
-name = "whisp-parser"
+name = "whisp_parser"
 version = "0.1.0"
+dependencies = [
+ "whisp_lexer",
+]
 
 [[package]]
-name = "whisp-runtime"
+name = "whisp_runtime"
 version = "0.1.0"
+dependencies = [
+ "whisp_parser",
+]
