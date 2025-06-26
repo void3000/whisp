@@ -1,8 +1,8 @@
+use whisp_runtime::runtime::interpreter::Interpreter;
+use whisp_runtime::runtime::evaluator::eval;
 use whisp_runtime::environment::Environment;
-use whisp_runtime::interpreter::Interpreter;
-use whisp_runtime::value_type::Value;
-use whisp_runtime::evaluator::eval;
-use whisp_parser::ast::ASTNode;
+use whisp_runtime::value::Value;
+use whisp_parser::tree::ASTNode;
 use whisp_parser::ops::Operation;
 
 #[test]

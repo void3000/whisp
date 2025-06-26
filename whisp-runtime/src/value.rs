@@ -1,5 +1,5 @@
 use std::fmt;
-use whisp_parser::ast::ASTNode;
+use whisp_parser::tree::ASTNode;
 
 pub type FunctionArgs = Vec<Value>;
 pub type List = Vec<Value>;

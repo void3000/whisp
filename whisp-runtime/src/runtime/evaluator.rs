@@ -1,5 +1,5 @@
-use crate::value_type::{ Value };
-use whisp_parser::ast::ASTNode;
+use crate::value::{ Value };
+use whisp_parser::tree::ASTNode;
 use whisp_parser::ops::Operation;
 
 pub trait Evaluator {

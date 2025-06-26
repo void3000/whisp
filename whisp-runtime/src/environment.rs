@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::value_type::Value;
+use crate::value::Value;
 
 pub struct Environment {
     /// Define lexical scope stack to handle nested blocks or function calls. 
