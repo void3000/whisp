@@ -1,10 +1,10 @@
 use crate::parser::ll_parser::{ Parser, LLParser };
 use crate::tree::ASTNode;
+use crate::ops::Operation;
 
 use whisp_lexer::token::Token;
 
 impl LLParser {
-    /// Grammar:
     /// Stmts ::= Stmt Stmts | ε
     pub fn parse_statements(&mut self) -> Result<ASTNode, String> {
         let mut stmts = Vec::<ASTNode>::new();
@@ -19,11 +19,115 @@ impl LLParser {
         Ok(ASTNode::sequence(stmts))
     }
 
-    /// Grammar:
-    /// Stmt ::= Expr ';'
+    /// Stmt ::= Expr ';' | LetBinding | FunctionDef | Block
     pub fn parse_statement(&mut self) -> Result<ASTNode, String> {
-        let expr = self.parse_expression()?;
+        let result = match self.peek() {
+            Token::Def => self.parse_function_def(),
+            Token::Let => self.parse_letbinding(),
+            Token::LBrace => self.parse_block(),
+            _ => { 
+                let expr = self.parse_expression()?;
+                self.expect(Token::Semicolon);
+                Ok(expr)
+            }
+        };
+
+        result
+    }
+
+    /// LetBinding ::= 'let' Identifier '=' Expr ';'
+    pub fn parse_letbinding(&mut self) -> Result<ASTNode, String> {
+        self.expect(Token::Let);
+        let identifier = self.parse_identifier()?;
+
+        self.expect(Token::Assign);
+        let body = self.parse_expression()?;
         self.expect(Token::Semicolon);
-        Ok(expr)
+
+        Ok(ASTNode::let_binding(identifier, body))
+    }
+
+    /// Block ::= '{' Stmts '}'
+    pub fn parse_block(&mut self) -> Result<ASTNode, String> {
+        self.expect(Token::LBrace);
+        let stmts = self.parse_statements()?;
+        self.expect(Token::RBrace);
+
+        Ok(stmts)
+    }
+}
+
+#[cfg(test)]
+mod test_statements {
+    use super::*;
+    use crate::parser::ll_parser::LLParser;
+    use whisp_lexer::token::Token;
+
+    #[test]
+    fn test_parse_letbinding_statements() {
+        let tokens = vec![
+            Token::Let,
+            Token::Identifier("x".into()),
+            Token::Assign,
+            Token::Int(42),
+            Token::Semicolon,
+            Token::Let,
+            Token::Identifier("y".into()),
+            Token::Assign,
+            Token::Int(100),
+            Token::Semicolon
+        ];
+
+        let mut parser = LLParser::new(tokens);
+        let ast = parser.parse_statements();
+
+        assert!(ast.is_ok());
+
+        match ast.unwrap() {
+            ASTNode::Sequence { stmts } => {
+                assert_eq!(stmts.len(), 2);
+                assert_eq!(stmts[0], ASTNode::let_binding(
+                    ASTNode::identifier("x"), 
+                    ASTNode::numeric(42)
+                ));
+                assert_eq!(stmts[1], ASTNode::let_binding(
+                    ASTNode::identifier("y"), 
+                    ASTNode::numeric(100)
+                ));
+            },
+            _ => panic!("Expected a sequence of statements"),
+        }
+    }
+
+    #[test]
+    fn test_block_statements() {
+        let tokens = vec![
+            Token::LBrace,
+            Token::Let,
+            Token::Identifier("x".into()),
+            Token::Assign,
+            Token::Int(42),
+            Token::Semicolon,
+            Token::RBrace
+        ];
+
+        let mut parser = LLParser::new(tokens);
+        let ast = parser.parse_statements();
+
+        assert!(ast.is_ok());
+
+        match ast.unwrap() {
+            ASTNode::Sequence { stmts } => {
+                assert_eq!(stmts.len(), 1);
+                assert_eq!(stmts[0], ASTNode::sequence(
+                    vec![ASTNode::let_binding(
+                            ASTNode::identifier("x"), 
+                            ASTNode::numeric(42)
+                        )
+                    ]
+                ));
+            },
+            _ => panic!("Expected a sequence of statements"),
+        }
     }
 }

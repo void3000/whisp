@@ -202,55 +202,6 @@ impl LLParser {
         result
     }
 
-    /// Call ::= Identifier '(' Args ')'
-    pub fn parse_call_function(&mut self) -> Result<ASTNode, String> {
-        let identifier = self.parse_identifier()?;
-        self.expect(Token::LParen);
-
-        let args = self.parse_args()?;
-        self.expect(Token::RParen);
-
-        Ok(ASTNode::call(identifier, args))
-    }
-
-    /// Args ::= ArgTerm ArgsTail | ε
-    pub fn parse_args(&mut self) -> Result<Vec<ASTNode>, String> {
-        let mut args = Vec::new();
-
-        if matches!(self.peek(), Token::RParen) {
-            return Ok(args);
-        }
-
-        args.push(self.parse_arg_term()?);
-        let _ = self.parse_args_trail(&mut args);
-
-        Ok(args)
-    }
-
-    /// ArgTerm ::= Literal | Identifier
-    pub fn parse_arg_term(&mut self) -> Result<ASTNode, String> {
-        match self.peek() {
-            Token::String(_)
-            | Token::Int(_)
-            | Token::Bool(_) => self.parse_literal(),
-            Token::Identifier(_) => self.parse_identifier(),
-            _ => Err(format!("Expected argument term, found {:?}", self.peek())),
-        }
-    }
-
-    /// ArgsTail ::= ',' ArgTerm ArgsTail | ε
-    pub fn parse_args_trail(
-        &mut self, 
-        args: &mut Vec<ASTNode>
-    ) -> Result<(), String> {
-        while let Token::Comma = self.peek() {
-            self.advance();
-            args.push(self.parse_arg_term()?);
-        }
-
-        Ok(())
-    }
-
     /// Literal ::= Int | String | Bool | Array
     pub fn parse_literal(&mut self) -> Result<ASTNode, String> {
         let result = match self.peek() {
