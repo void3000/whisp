@@ -1,4 +1,4 @@
-use whisp_runtime::value_type::Value;
+use whisp_runtime::value::Value;
 
 #[test]
 fn test_addition() {

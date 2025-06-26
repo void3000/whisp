@@ -1,8 +1,8 @@
-use crate::evaluator::{ Evaluator, eval };
+use crate::runtime::evaluator::{ Evaluator, eval };
 use crate::environment::Environment;
-use crate::value_type::{ Value };
+use crate::value::{ Value };
 
-use whisp_parser::ast::ASTNode;
+use whisp_parser::tree::ASTNode;
 use whisp_parser::ops::Operation;
 
 /// All the evaluator should is to walk through the AST and evaluate it. The AST

@@ -1,2 +1,3 @@
-pub mod ast;
+pub mod tree;
 pub mod ops;
+pub mod parser;
