@@ -1,6 +1,5 @@
 use crate::parser::ll_parser::{ Parser, LLParser };
 use crate::tree::ASTNode;
-use crate::ops::Operation;
 
 use whisp_lexer::token::Token;
 
@@ -19,12 +18,16 @@ impl LLParser {
         Ok(ASTNode::sequence(stmts))
     }
 
-    /// Stmt ::= Expr ';' | LetBinding | FunctionDef | Block
+    /// Stmt ::= Expr ';' | LetBinding | FunctionDef | Block | ControlFlow
     pub fn parse_statement(&mut self) -> Result<ASTNode, String> {
         let result = match self.peek() {
-            Token::Def => self.parse_function_def(),
-            Token::Let => self.parse_letbinding(),
-            Token::LBrace => self.parse_block(),
+            Token::If
+            | Token::While 
+            | Token::For 
+            | Token::Return => self.parse_control_flow(),
+            Token::Def      => self.parse_function_def(),
+            Token::Let      => self.parse_letbinding(),
+            Token::LBrace   => self.parse_block(),
             _ => { 
                 let expr = self.parse_expression()?;
                 self.expect(Token::Semicolon);

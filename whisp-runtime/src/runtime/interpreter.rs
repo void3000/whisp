@@ -64,6 +64,7 @@ impl<'a> Evaluator for Interpreter<'a> {
             Operation::Sub => lhs_val.sub(rhs_val),
             Operation::Mul => lhs_val.mul(rhs_val),
             Operation::Div => lhs_val.div(rhs_val),
+            Operation::Mod => lhs_val.modulo(rhs_val),  
             Operation::Eq  => lhs_val.eq(rhs_val),
             Operation::Lt  => lhs_val.lt(rhs_val),
             Operation::Gt  => lhs_val.gt(rhs_val),

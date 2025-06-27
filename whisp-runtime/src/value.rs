@@ -49,6 +49,7 @@ impl Value {
     pub fn sub(self, other: Value) -> Value { int_bin_op!(self, other, -) }
     pub fn mul(self, other: Value) -> Value { int_bin_op!(self, other, *) }
     pub fn div(self, other: Value) -> Value { int_bin_op!(self, other, /) }
+    pub fn modulo(self, other: Value) -> Value { int_bin_op!(self, other, %) }
 
     pub fn and(self, other: Value) -> Value { bool_bin_op!(self, other, &&) }
     pub fn or(self, other: Value) -> Value { bool_bin_op!(self, other, ||) }
