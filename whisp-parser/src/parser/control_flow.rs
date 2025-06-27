@@ -8,7 +8,7 @@ impl LLParser {
     pub fn parse_control_flow(&mut self) -> Result<ASTNode, String> {
         match self.peek() {
             Token::If       => self.parse_ifstatement(),
-            // Token::For      => self.parse_forstatement(),
+            Token::For      => self.parse_forstatement(),
             Token::While    => self.parse_whilestatement(),
             Token::Return   => self.parse_return(),
             _ => Err(format!("Unexpected token: {:?}", self.peek())),
@@ -62,6 +62,17 @@ impl LLParser {
         let body = self.parse_block()?;
 
         Ok(ASTNode::while_loop(cond, body))
+    }
+
+    /// ForStatement ::= 'for' Identifier 'in' Array Block
+    pub fn parse_forstatement(&mut self) -> Result<ASTNode, String> {
+        self.expect(Token::For);
+        let var = self.parse_identifier()?;
+        self.expect(Token::In);
+        let itr = self.parse_array()?;
+        let body = self.parse_block()?;
+
+        Ok(ASTNode::for_loop(var, itr, body))
     }
 }
 
@@ -166,6 +177,43 @@ mod test_control_flow {
                 ASTNode::boolean(false),
                 ASTNode::sequence(vec![
                     ASTNode::return_stmt(ASTNode::numeric(0))
+                ])
+            )
+        );
+    }
+
+    #[test]
+    fn test_parse_for_statement() {
+        let mut parser = LLParser::new(vec![
+            Token::For,
+            Token::Identifier("i".into()),
+            Token::In,
+            Token::Array,
+            Token::LBracket,
+            Token::Int(7),
+            Token::Comma,
+            Token::Int(3),
+            Token::RBracket,
+            Token::LBrace,
+            Token::Return,
+            Token::Identifier("i".into()),
+            Token::Semicolon,
+            Token::RBrace,
+        ]);
+
+        let result = parser.parse_control_flow();
+        assert!(result.is_ok());
+
+        let ast = result.unwrap();
+        assert_eq!(ast,
+            ASTNode::for_loop(
+                ASTNode::identifier("i"),
+                ASTNode::array(vec![
+                    ASTNode::numeric(7),
+                    ASTNode::numeric(3)
+                ]),
+                ASTNode::sequence(vec![
+                    ASTNode::return_stmt(ASTNode::identifier("i"))
                 ])
             )
         );
