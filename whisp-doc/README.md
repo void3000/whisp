@@ -297,7 +297,7 @@ ControlFlow       ::= IfStatement
 BoolExpr          ::= BoolOrExpr
 
 BoolOrExpr        ::= BoolAndExpr BoolOrExprTail
-BoolOrExprTrail   ::= 'or' BoolTerm BoolAndExpr BoolOrExprTrail
+BoolOrExprTrail   ::= 'or' BoolAndExpr BoolOrExprTrail
                     | ε
 
 BoolAndExpr       ::= BoolTerm BoolAndExprTail
