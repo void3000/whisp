@@ -308,9 +308,48 @@ impl LLParser {
         result
     }
 
+    /// Array ::= 'array' '[' ArrayElements ']'
+    pub fn parse_array(&mut self) -> Result<ASTNode, String> {
+        self.expect(Token::Array);
+        self.expect(Token::LBracket);
+
+        let elements = self.parse_array_elements()?;
+        self.expect(Token::RBracket);
+
+        Ok(ASTNode::array(elements))
+    }
+
+    /// ArrayElements ::= Expr ArrayElementsTail | ε
+    pub fn parse_array_elements(&mut self) -> Result<Vec<ASTNode>, String> {
+        let mut elements = Vec::new();
+
+        if matches!(self.peek(), Token::RBracket) {
+            return Ok(elements);
+        }
+
+        elements.push(self.parse_expression()?);
+
+        let _ = self.parse_array_elements_trail(&mut elements)?;
+
+        Ok(elements)
+    }
+
+    /// ArrayElementsTail ::= ',' Expr ArrayElementsTail | ε
+    pub fn parse_array_elements_trail(
+        &mut self, 
+        elements: &mut Vec<ASTNode>
+    ) -> Result<(), String> {
+        while matches!(self.peek(), Token::Comma) {
+            self.advance();
+            elements.push(self.parse_expression()?);
+        }
+        Ok(())
+    }
+
     /// Literal ::= Int | String | Bool | Array
     pub fn parse_literal(&mut self) -> Result<ASTNode, String> {
         let result = match self.peek() {
+            Token::Array         => self.parse_array(),
             Token::Int(value)    => Ok(ASTNode::numeric(*value)),
             Token::String(value) => Ok(ASTNode::string(value)),
             Token::Bool(value)   => Ok(ASTNode::boolean(*value)),
@@ -406,6 +445,12 @@ mod test_expressions {
             Token::Int(10),
             Token::String("hello".into()),
             Token::Bool(true),
+            Token::Array,
+            Token::LBracket,
+            Token::Int(1),
+            Token::Comma,
+            Token::Int(2),
+            Token::RBracket
         ]);
 
         let int_ast = parser.parse_literal().unwrap();
@@ -416,5 +461,11 @@ mod test_expressions {
 
         let bool_ast = parser.parse_literal().unwrap();
         assert_eq!(bool_ast, ASTNode::boolean(true));
+
+        let array_ast = parser.parse_literal().unwrap();
+        assert_eq!(array_ast, ASTNode::array(vec![
+            ASTNode::numeric(1),
+            ASTNode::numeric(2)
+        ]));
     }
 }
