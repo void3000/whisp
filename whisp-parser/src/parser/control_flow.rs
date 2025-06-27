@@ -9,7 +9,7 @@ impl LLParser {
         match self.peek() {
             Token::If       => self.parse_ifstatement(),
             // Token::For      => self.parse_forstatement(),
-            // Token::While    => self.parse_whilestatement(),
+            Token::While    => self.parse_whilestatement(),
             Token::Return   => self.parse_return(),
             _ => Err(format!("Unexpected token: {:?}", self.peek())),
         }
@@ -54,6 +54,17 @@ impl LLParser {
             _ => Ok(None),
         }
     }
+
+    /// WhileStatement ::= 'while' BoolExpr Block
+    pub fn parse_whilestatement(&mut self) -> Result<ASTNode, String> {
+        self.expect(Token::While);
+        let cond = self.parse_expression()?;
+        let body = self.parse_block()?;
+
+        Ok(ASTNode::while_loop(cond, body))
+    }
+
+    
 }
 
 #[cfg(test)]
@@ -112,5 +123,31 @@ mod test_control_flow {
         let ast = result.unwrap();
 
         assert_eq!(ast, ASTNode::return_stmt(ASTNode::numeric(42)));
+    }
+
+    #[test]
+    fn test_parse_while_statement() {
+        let mut parser = LLParser::new(vec![
+            Token::While,
+            Token::Bool(false),
+            Token::LBrace,
+            Token::Return,
+            Token::Int(0),
+            Token::Semicolon,
+            Token::RBrace,
+        ]);
+
+        let result = parser.parse_control_flow();
+        assert!(result.is_ok());
+
+        let ast = result.unwrap();
+        assert_eq!(ast, 
+            ASTNode::while_loop(
+                ASTNode::boolean(false),
+                ASTNode::sequence(vec![
+                    ASTNode::return_stmt(ASTNode::numeric(0))
+                ])
+            )
+        );
     }
 }
