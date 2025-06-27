@@ -63,8 +63,6 @@ impl LLParser {
 
         Ok(ASTNode::while_loop(cond, body))
     }
-
-    
 }
 
 #[cfg(test)]
