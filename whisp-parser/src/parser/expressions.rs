@@ -181,6 +181,112 @@ impl LLParser {
         }
     }
 
+    /// BoolExpr ::= BoolOrExpr
+    pub fn parse_bool_expr(&mut self) -> Result<ASTNode, String> {
+        self.parse_bool_or_expr()
+    }
+
+    /// BoolOrExpr ::= BoolAndExpr BoolOrExprTail
+    pub fn parse_bool_or_expr(&mut self) -> Result<ASTNode, String> {
+        let lhs = self.parse_bool_and_expr()?;
+        self.parse_bool_or_expr_tail(lhs)
+    }
+
+    /// BoolOrExprTrail ::= 'or' BoolAndExpr BoolOrExprTrail | ε
+    pub fn parse_bool_or_expr_tail(
+        &mut self, 
+        mut lhs: ASTNode
+    ) -> Result<ASTNode, String> {
+        while matches!(self.peek(), Token::Or) {
+            self.advance();
+            let rhs = self.parse_bool_and_expr()?;
+            lhs = ASTNode::binary_op(Operation::Or, lhs, rhs);
+        }
+
+        Ok(lhs)
+    }
+
+    /// BoolAndExpr ::= BoolTerm BoolAndExprTail
+    pub fn parse_bool_and_expr(&mut self) -> Result<ASTNode, String> {
+        let lhs = self.parse_bool_term()?;
+        self.parse_bool_and_expr_tail(lhs)
+    }
+
+    pub fn parse_bool_and_expr_tail(
+        &mut self, 
+        mut lhs: ASTNode
+    ) -> Result<ASTNode, String> {
+        while matches!(self.peek(), Token::And) {
+            self.advance();
+            let rhs = self.parse_bool_term()?;
+            lhs = ASTNode::binary_op(Operation::And, lhs, rhs);
+        }
+
+        Ok(lhs)
+    }
+
+    /// BoolTerm ::= Bool | ComparisonExpr | Identifier | '(' BoolExpr ')'
+    pub fn parse_bool_term(&mut self) -> Result<ASTNode, String> {
+        match self.peek() {
+            Token::Bool(value) => {
+                let result = ASTNode::boolean(*value);
+                self.advance();
+                Ok(result)
+            },
+            Token::LParen => {
+                self.advance();
+                let expr = self.parse_bool_expr()?;
+                self.expect(Token::RParen);
+                Ok(expr)
+            },
+            Token::Identifier( _ ) => {
+                match self.lookahead() {
+                    Token::Equal
+                    | Token::GreaterEqual
+                    | Token::GreaterThan
+                    | Token::LessThan
+                    | Token::LessEqual => self.parse_comparison_expr(),
+                    _ => self.parse_identifier(),
+                }
+            },
+            _ => Err(format!("Expected boolean value, found {:?}", self.peek())),
+        }
+    }
+
+    /// ComparisonExpr ::= Operand ('==' | '>' | '<' | '>=' | '<=') Operand
+    pub fn parse_comparison_expr(&mut self) -> Result<ASTNode, String> {
+        let lhs = self.parse_operand()?;
+        let op  = match self.peek() {
+            Token::Equal        => Operation::Eq,
+            Token::GreaterEqual => Operation::Ge,
+            Token::GreaterThan  => Operation::Gt,
+            Token::LessThan     => Operation::Le,
+            Token::LessEqual    => Operation::Lt,
+            _ => return Err(format!("Expected comparison operator, found {:?}", self.peek())),
+        };
+        let rhs = self.parse_operand()?;
+
+        Ok(ASTNode::binary_op(op, lhs, rhs))
+    }
+
+    /// Operand ::= Int | Identifier | ArrayIndex
+    pub fn parse_operand(&mut self) -> Result<ASTNode, String> {
+        match self.peek() {
+            Token::Identifier( _ ) => {
+                match self.lookahead() {
+                    Token::LBracket => self.parse_array_index(),
+                    _ => self.parse_identifier(),
+                }
+            },
+            Token::Int(value) => {
+                let result = ASTNode::numeric(*value);
+                self.advance();
+                Ok(result)
+            },
+            _ => Err(format!("Expected operand, found {:?}", self.peek())),
+        }
+    }
+
     /// ArrayIndex ::= Identifier '[' (Int | Identifier) ']'
     pub fn parse_array_index(&mut self) -> Result<ASTNode, String> {
         let identifier = self.parse_identifier()?;

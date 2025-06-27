@@ -27,7 +27,7 @@ impl LLParser {
     /// IfStatement ::= 'if' BoolExpr Block IfStatementTail
     pub fn parse_ifstatement(&mut self) -> Result<ASTNode, String> {
         self.expect(Token::If);
-        let cond = self.parse_expression()?;
+        let cond = self.parse_bool_expr()?;
         let then_branch = self.parse_block()?;
         let else_branch = self.parse_ifstatement_trail()?;
 
@@ -40,7 +40,7 @@ impl LLParser {
         match self.peek() {
             Token::Elif => {
                 self.expect(Token::Elif);
-                let cond = self.parse_expression()?;
+                let cond = self.parse_bool_expr()?;
                 let then_branch = self.parse_block()?;
                 let else_branch = self.parse_ifstatement_trail()?;
 
@@ -58,7 +58,7 @@ impl LLParser {
     /// WhileStatement ::= 'while' BoolExpr Block
     pub fn parse_whilestatement(&mut self) -> Result<ASTNode, String> {
         self.expect(Token::While);
-        let cond = self.parse_expression()?;
+        let cond = self.parse_bool_expr()?;
         let body = self.parse_block()?;
 
         Ok(ASTNode::while_loop(cond, body))
@@ -74,7 +74,9 @@ mod test_control_flow {
     fn test_parse_if_statement() {
         let mut parser = LLParser::new(vec![
             Token::If,
+            Token::LParen,
             Token::Bool(true),
+            Token::RParen,
             Token::LBrace,
             Token::Return,
             Token::Int(7),
@@ -104,6 +106,26 @@ mod test_control_flow {
                 ]))
             )
         );
+    }
+
+    #[test]
+    fn test_parse_if_statement_fail_when_non_bool_expr() {
+        let mut parser = LLParser::new(vec![
+            Token::If,
+            Token::Int(1),
+            Token::Add,
+            Token::Int(2),
+            Token::LBrace,
+            Token::Return,
+            Token::Int(7),
+            Token::Semicolon,
+            Token::RBrace
+        ]);
+
+        let result = parser.parse_control_flow();
+
+        let err = result.unwrap_err();
+        assert!(err.contains("Expected boolean value, found Int(1)"));
     }
 
     #[test]
