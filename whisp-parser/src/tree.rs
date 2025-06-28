@@ -6,7 +6,7 @@ pub enum ASTNode {
     Numeric { value: i32 },
     Str { value: String },
     Identifier { name: String },
-    Sequence { 
+    Statements { 
         stmts: Vec<ASTNode> 
     },
     Array { 
@@ -29,11 +29,11 @@ pub enum ASTNode {
         identifier: Box<ASTNode>,
         body: Box<ASTNode>
     },
-    WhileLoopStatement { 
+    WhileLoop { 
         cond: Box<ASTNode>,
         body: Box<ASTNode>
     },
-    ForLoopStatement {
+    ForLoop {
         itr: Box<ASTNode>,
         var: Box<ASTNode>,
         body: Box<ASTNode>
@@ -58,8 +58,8 @@ pub enum ASTNode {
 }
 
 impl ASTNode {
-     pub fn sequence(stmts: Vec<ASTNode>) -> Self {
-        ASTNode::Sequence { stmts }
+     pub fn statements(stmts: Vec<ASTNode>) -> Self {
+        ASTNode::Statements { stmts }
     }
 
     pub fn numeric(value: i32) -> Self {
@@ -116,18 +116,18 @@ impl ASTNode {
     }
 
     pub fn while_loop(cond: ASTNode, body: ASTNode) -> Self {
-        ASTNode::WhileLoopStatement {
+        ASTNode::WhileLoop {
             cond: Box::new(cond),
             body: Box::new(body),
         }
     }
 
     pub fn for_loop(
-        var: ASTNode, 
-        itr: ASTNode, 
+        itr: ASTNode,
+        var: ASTNode,
         body: ASTNode
     ) -> Self {
-        ASTNode::ForLoopStatement {
+        ASTNode::ForLoop {
             var: Box::new(var),
             itr: Box::new(itr),
             body: Box::new(body),

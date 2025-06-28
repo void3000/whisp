@@ -15,7 +15,7 @@ impl LLParser {
             }
         }
 
-        Ok(ASTNode::sequence(stmts))
+        Ok(ASTNode::statements(stmts))
     }
 
     /// Stmt ::= Expr ';' | LetBinding | FunctionDef | Block | ControlFlow
@@ -87,7 +87,7 @@ mod test_statements {
         assert!(ast.is_ok());
 
         match ast.unwrap() {
-            ASTNode::Sequence { stmts } => {
+            ASTNode::Statements { stmts } => {
                 assert_eq!(stmts.len(), 2);
                 assert_eq!(stmts[0], ASTNode::let_binding(
                     ASTNode::identifier("x"), 
@@ -98,7 +98,7 @@ mod test_statements {
                     ASTNode::numeric(100)
                 ));
             },
-            _ => panic!("Expected a sequence of statements"),
+            _ => panic!("Expected valid statement."),
         }
     }
 
@@ -120,9 +120,9 @@ mod test_statements {
         assert!(ast.is_ok());
 
         match ast.unwrap() {
-            ASTNode::Sequence { stmts } => {
+            ASTNode::Statements { stmts } => {
                 assert_eq!(stmts.len(), 1);
-                assert_eq!(stmts[0], ASTNode::sequence(
+                assert_eq!(stmts[0], ASTNode::statements(
                     vec![ASTNode::let_binding(
                             ASTNode::identifier("x"), 
                             ASTNode::numeric(42)
@@ -130,7 +130,7 @@ mod test_statements {
                     ]
                 ));
             },
-            _ => panic!("Expected a sequence of statements"),
+            _ => panic!("Expected valid statement."),
         }
     }
 }

@@ -109,10 +109,10 @@ mod test_control_flow {
         assert_eq!(ast, 
             ASTNode::if_statement(
                 ASTNode::boolean(true),
-                ASTNode::sequence(vec![
+                ASTNode::statements(vec![
                     ASTNode::return_stmt(ASTNode::numeric(7))
                 ]),
-                Some(ASTNode::sequence(vec![
+                Some(ASTNode::statements(vec![
                     ASTNode::return_stmt(ASTNode::numeric(4))
                 ]))
             )
@@ -175,7 +175,7 @@ mod test_control_flow {
         assert_eq!(ast, 
             ASTNode::while_loop(
                 ASTNode::boolean(false),
-                ASTNode::sequence(vec![
+                ASTNode::statements(vec![
                     ASTNode::return_stmt(ASTNode::numeric(0))
                 ])
             )
@@ -212,7 +212,7 @@ mod test_control_flow {
                     ASTNode::numeric(7),
                     ASTNode::numeric(3)
                 ]),
-                ASTNode::sequence(vec![
+                ASTNode::statements(vec![
                     ASTNode::return_stmt(ASTNode::identifier("i"))
                 ])
             )
