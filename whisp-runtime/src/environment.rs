@@ -78,6 +78,6 @@ impl Environment {
             }
         }
         
-        return Err(format!("Variable '{}' not found in any scope", name));
+        Err(format!("Undeclared variable '{}' referenced.", name))
     }
 }

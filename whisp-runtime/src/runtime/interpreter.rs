@@ -121,6 +121,46 @@ impl<'a> Evaluator for Interpreter<'a> {
 
         Ok(result)
     }
+
+    fn eval_letbinding(&mut self, node: &ASTNode) -> Result<Value, String> {
+        let result = match node {
+            ASTNode::LetBinding { identifier, body } => {
+                let eval_value = eval(self, body)?;
+                match &**identifier {
+                    ASTNode::Identifier { name } => {
+                        self.env.put(name.clone(), eval_value);
+                        Ok(Value::Void(()))
+                    }
+                    _ => Err("Invalid variale binding operation.".to_string()),
+                }
+            }
+            _ => Err("Invalid variale binding operation.".to_string()),
+        };
+
+        result
+    }
+
+    fn eval_assgin(&mut self, node: &ASTNode) -> Result<Value, String> {
+        let result = match node {
+            ASTNode::Assign { identifier, body } => {
+                match &**identifier {
+                    ASTNode::Identifier { name } => {
+                        let eval_value = eval(self, body)?;
+                        let result = self.env.update(&name.clone(), eval_value);
+
+                        match result {
+                            Ok( _ ) => Ok(Value::Void(())),
+                            Err(err) => Err(err),
+                        }
+                    }
+                    _ => Err("Invalid an assignment operation.".to_string()),
+                }
+            }
+            _ => Err("Invalid an assignment operation.".to_string()),
+        };
+
+        result
+    }
 }
 
 #[cfg(test)]
@@ -158,9 +198,58 @@ mod test_inerpreter {
         let result = eval(&mut interpreter, &ast);
 
         assert!(result.is_ok());
-        match result {
-            Ok(Value::Int(val)) => assert_eq!(val, 2),
-            _ => panic!("Expected numeric value 2"),
-        }
+
+        let value = result.unwrap();
+        assert_eq!(value, Value::Int(2));
+    }
+
+    #[test]
+    fn test_eval_array_index_out_of_bound() {
+        let mut env = Environment::new();
+        let mut interpreter = Interpreter::new(&mut env);
+        let ast = ASTNode::array_index(
+            ASTNode::array(vec![
+                ASTNode::numeric(1), 
+                ASTNode::numeric(2), 
+                ASTNode::numeric(3)
+            ]),
+            ASTNode::numeric(4)
+        );
+        let result = eval(&mut interpreter, &ast);
+
+        assert!(result.is_err());
+
+        let err = result.unwrap_err();
+        assert!(err.contains("Index 4 out of bound."));
+    }
+
+    #[test]
+    fn test_let_binding() {
+        let mut env = Environment::new();
+        let mut interpreter = Interpreter::new(&mut env);
+        let ast = ASTNode::let_binding(
+            ASTNode::identifier("x".to_string()),
+            ASTNode::numeric(42)
+        );
+        let result = eval(&mut interpreter, &ast);
+
+        assert!(result.is_ok());
+        assert_eq!(env.get("x"), Some(Value::Int(42)));
+    }
+
+    #[test]
+    fn test_assign_undeclared_variable() {
+        let mut env = Environment::new();
+        let mut interpreter = Interpreter::new(&mut env);
+        let ast = ASTNode::assign(
+            ASTNode::identifier("w".to_string()),
+            ASTNode::numeric(42)
+        );
+        let result = eval(&mut interpreter, &ast);
+
+        assert!(result.is_err());
+
+        let err = result.unwrap_err();
+        assert!(err.contains("Undeclared variable 'w' referenced."));
     }
 }
