@@ -147,7 +147,6 @@ impl<'a> Evaluator for Interpreter<'a> {
                     ASTNode::Identifier { name } => {
                         let eval_value = eval(self, body)?;
                         let result = self.env.update(&name.clone(), eval_value);
-
                         match result {
                             Ok( _ ) => Ok(Value::Void(())),
                             Err(err) => Err(err),
@@ -160,6 +159,19 @@ impl<'a> Evaluator for Interpreter<'a> {
         };
 
         result
+    }
+
+    fn eval_statements(&mut self, node: &ASTNode) -> Result<Value, String> {
+        match node {
+            ASTNode::Sequence { stmts } => {
+                let mut last_value = Value::Void(());
+                for stmt in stmts {
+                    last_value = eval(self, stmt)?;
+                }
+                Ok(last_value)
+            }
+            _ => Err("Expected valid of statement.".to_string()),
+        }
     }
 }
 
@@ -198,9 +210,7 @@ mod test_inerpreter {
         let result = eval(&mut interpreter, &ast);
 
         assert!(result.is_ok());
-
-        let value = result.unwrap();
-        assert_eq!(value, Value::Int(2));
+        assert_eq!(result.unwrap(), Value::Int(2));
     }
 
     #[test]
@@ -251,5 +261,30 @@ mod test_inerpreter {
 
         let err = result.unwrap_err();
         assert!(err.contains("Undeclared variable 'w' referenced."));
+    }
+
+    #[test]
+    fn test_statements() {
+        let mut env = Environment::new();
+        let mut interpreter = Interpreter::new(&mut env);
+        let ast = ASTNode::sequence(vec![
+            ASTNode::let_binding(
+                ASTNode::identifier("a".to_string()),
+                ASTNode::numeric(10)
+            ),
+            ASTNode::let_binding(
+                ASTNode::identifier("b".to_string()),
+                ASTNode::numeric(20)
+            ),
+            ASTNode::binary_op(
+                Operation::Add,
+                ASTNode::identifier("a".to_string()),
+                ASTNode::identifier("b".to_string())
+            ),
+        ]);
+        let result = eval(&mut interpreter, &ast);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Int(30));
     }
 }
