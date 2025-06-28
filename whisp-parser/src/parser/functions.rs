@@ -130,12 +130,12 @@ mod test_functions {
         assert!(ast.is_ok());
 
         match ast.unwrap() {
-            ASTNode::Sequence { stmts } => {
+            ASTNode::Statements { stmts } => {
                 assert_eq!(stmts.len(), 1);
                 assert_eq!(stmts[0], ASTNode::function_def(
                     ASTNode::identifier("my_function"),
                     vec![ASTNode::identifier("a"), ASTNode::identifier("b")],
-                    ASTNode::sequence(vec![
+                    ASTNode::statements(vec![
                         ASTNode::let_binding(
                             ASTNode::identifier("result"),
                             ASTNode::binary_op(
@@ -147,7 +147,7 @@ mod test_functions {
                     ])
                 ));
             },
-            _ => panic!("Expected a sequence of statements"),
+            _ => panic!("Expected valid statement."),
         }
     }
 

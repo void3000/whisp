@@ -163,7 +163,7 @@ impl<'a> Evaluator for Interpreter<'a> {
 
     fn eval_statements(&mut self, node: &ASTNode) -> Result<Value, String> {
         match node {
-            ASTNode::Sequence { stmts } => {
+            ASTNode::Statements { stmts } => {
                 let mut last_value = Value::Void(());
                 for stmt in stmts {
                     last_value = eval(self, stmt)?;
@@ -172,6 +172,47 @@ impl<'a> Evaluator for Interpreter<'a> {
             }
             _ => Err("Expected valid of statement.".to_string()),
         }
+    }
+
+    fn eval_whileloop(&mut self, node: &ASTNode) -> Result<Value, String> {
+        match node {
+            ASTNode::WhileLoop { cond, body } => {
+                while matches!(eval(self, cond)?,Value::Bool(true)) {
+                    eval(self, body)?;
+                }
+                Ok(Value::Void(()))
+            }
+            _ => Err("Expected a while loop.".to_string()),
+        }
+    }
+
+    fn eval_forloop(&mut self, node: &ASTNode) -> Result<Value, String> {
+        let ASTNode::ForLoop { 
+            itr, 
+            var, 
+            body 
+        } = node 
+        else {
+            return Err("Expected a valid for-loop.".to_string());
+        };
+
+        let iterable = eval(self, itr)?;
+        let Value::Array(elements) = iterable 
+        else {
+            return Err("Expected an iterable for the for-loop.".to_string());
+        };
+
+        let ASTNode::Identifier { name } = &**var 
+        else {
+            return Err("Expected a valid identifier for the for-loop.".to_string());
+        };
+
+        for item in elements {
+            self.env.put(name.clone(), item);
+            eval(self, body)?;
+        }
+
+        Ok(Value::Void(()))
     }
 }
 
@@ -267,7 +308,7 @@ mod test_inerpreter {
     fn test_statements() {
         let mut env = Environment::new();
         let mut interpreter = Interpreter::new(&mut env);
-        let ast = ASTNode::sequence(vec![
+        let ast = ASTNode::statements(vec![
             ASTNode::let_binding(
                 ASTNode::identifier("a".to_string()),
                 ASTNode::numeric(10)
@@ -286,5 +327,69 @@ mod test_inerpreter {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Int(30));
+    }
+
+    #[test]
+    fn test_while_loop() {
+        let mut env = Environment::new();
+        let mut interpreter = Interpreter::new(&mut env);
+        let ast = ASTNode::statements(vec![
+            ASTNode::let_binding(
+                ASTNode::identifier("x".to_string()),
+                ASTNode::numeric(0)
+            ),
+            ASTNode::while_loop(
+                ASTNode::binary_op(
+                    Operation::Lt,
+                    ASTNode::identifier("x".to_string()),
+                    ASTNode::numeric(3)
+                ),
+                ASTNode::assign(
+                    ASTNode::identifier("x".to_string()),
+                    ASTNode::binary_op(
+                        Operation::Add,
+                        ASTNode::identifier("x".to_string()),
+                        ASTNode::numeric(1)
+                    )
+                )
+            ),
+        ]);
+    
+        let result = eval(&mut interpreter, &ast);
+        assert!(result.is_ok());
+        assert_eq!(env.get("x"), Some(Value::Int(3)));
+    }
+
+    #[test]
+    fn test_for_loop() {
+        let mut env = Environment::new();
+        let mut interpreter = Interpreter::new(&mut env);
+        let ast = ASTNode::statements(vec![
+            ASTNode::let_binding(
+                ASTNode::identifier("sum".to_string()),
+                ASTNode::numeric(0)
+            ),
+            ASTNode::for_loop(
+                ASTNode::array(vec![
+                    ASTNode::numeric(1),
+                    ASTNode::numeric(2),
+                    ASTNode::numeric(3),
+                ]),
+                ASTNode::identifier("num".to_string()),
+                ASTNode::assign(
+                    ASTNode::identifier("sum".to_string()),
+                    ASTNode::binary_op(
+                        Operation::Add,
+                        ASTNode::identifier("sum".to_string()),
+                        ASTNode::identifier("num".to_string())
+                    )
+                )
+            ),
+        ]);
+
+        let result = eval(&mut interpreter, &ast);
+
+        assert!(result.is_ok());
+        assert_eq!(env.get("sum"), Some(Value::Int(6)));
     }
 }
