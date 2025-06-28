@@ -18,6 +18,7 @@ pub trait Evaluator {
     ) -> Result<Value, String>;
     fn eval_letbinding(&mut self, node: &ASTNode) -> Result<Value, String>;
     fn eval_assgin(&mut self, node: &ASTNode) -> Result<Value, String>;
+    fn eval_statements(&mut self, node: &ASTNode) -> Result<Value, String>;
 }
 
 pub fn eval(
@@ -34,6 +35,7 @@ pub fn eval(
         ASTNode::BinaryOp { op, lhs, rhs } => evaluator.eval_binary_op(op, lhs, rhs),
         ASTNode::LetBinding { .. } => evaluator.eval_letbinding(&node),
         ASTNode::Assign { .. } => evaluator.eval_assgin(&node),
+        ASTNode::Sequence { .. } => evaluator.eval_statements(&node),
         _ => Err("Unsupported ASTNode type".to_string()),
     }
 }
