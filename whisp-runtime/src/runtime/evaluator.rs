@@ -19,6 +19,7 @@ pub trait Evaluator {
     fn eval_letbinding(&mut self, node: &ASTNode) -> Result<Value, String>;
     fn eval_assgin(&mut self, node: &ASTNode) -> Result<Value, String>;
     fn eval_statements(&mut self, node: &ASTNode) -> Result<Value, String>;
+    fn eval_ifstatement(&mut self, node: &ASTNode) -> Result<Value, String>;
     fn eval_whileloop(&mut self, node: &ASTNode) -> Result<Value, String>;
     fn eval_forloop(&mut self, node: &ASTNode) -> Result<Value, String>;
 }
@@ -40,6 +41,7 @@ pub fn eval(
         ASTNode::Statements { .. } => evaluator.eval_statements(&node),
         ASTNode::WhileLoop { .. } => evaluator.eval_whileloop(&node),
         ASTNode::ForLoop { .. } => evaluator.eval_forloop(&node),
+        ASTNode::IfStatement { .. } => evaluator.eval_ifstatement(&node),
         _ => Err("Unsupported ASTNode type".to_string()),
     }
 }

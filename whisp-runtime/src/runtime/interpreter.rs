@@ -30,56 +30,70 @@ impl<'a> Interpreter<'a> {
 
 impl<'a> Evaluator for Interpreter<'a> {
     fn eval_str(&mut self, node: &ASTNode) -> Result<Value, String> {
-        match node {
-            ASTNode::Str { value } => Ok(Value::Str(value.clone())),
-            _ => Err("Expected a string.".to_string()),
-        }
+        let ASTNode::Str { value } = node 
+        else {
+            return Err("Expected a valid string.".to_string());
+        };
+
+        Ok(Value::Str(value.clone()))
     }
 
     fn eval_numeric(&mut self, node: &ASTNode) -> Result<Value, String> {
-        match node {
-            ASTNode::Numeric { value } => Ok(Value::Int(*value)),
-            _ => Err("Expected a numeric.".to_string()),
-        }
+        let ASTNode::Numeric { value } = node 
+        else {
+            return Err("Expected a valid numeric.".to_string());
+        };
+
+        Ok(Value::Int(*value))
     }
 
     fn eval_boolean(&mut self, node: &ASTNode) -> Result<Value, String> {
-        match node {
-            ASTNode::Bool { value } => Ok(Value::Bool(*value)),
-            _ => Err("Expected a boolean".to_string()),
+        let ASTNode::Bool { value } = node 
+        else {
+            return Err("Expected a valid boolean.".to_string());
+        };
+
+        match value {
+            true => Ok(Value::Bool(true)),
+            false => Ok(Value::Bool(false)),
         }
     }
 
     fn eval_array(&mut self, node: &ASTNode) -> Result<Value, String> {
-        match node {
-            ASTNode::Array { elements } => {
-                let mut values = Vec::new();
-                for elem in elements {
-                    let value = eval(self, elem)?;
-                    values.push(value);
-                }
-                Ok(Value::Array(values))
-            }
-            _ => Err("Expected an array.".to_string()),
+        let ASTNode::Array { elements } = node 
+        else {
+            return Err("Expected a valid array.".to_string());
+        };
+        let mut values = Vec::new();
+        
+        for elem in elements {
+            let value = eval(self, elem)?;
+            values.push(value);
         }
+        
+        Ok(Value::Array(values))
     }
 
     fn eval_array_index(&mut self, node: &ASTNode) -> Result<Value, String> {
-        match node {
-            ASTNode::ArrayIndex { arr, index } => {
-                let array_list_eval = eval(self, arr)?;
-                let index_eval      = eval(self, index)?;
-                match (array_list_eval, index_eval) {
-                    (Value::Array(arr), Value::Int(idx)) => {
-                        let value = arr.get(idx as usize)
-                            .ok_or_else(|| format!("Index {} out of bound.", idx))?
-                            .clone();
-                        Ok(value)
-                    }
-                    _ => Err("Expected a valid integer index.".to_string()),
-                }
+        let ASTNode::ArrayIndex { 
+            arr, 
+            index 
+        } = node 
+        else {
+            return Err("Expected a valid array index operation.".to_string());
+        };
+
+        let arr_eval = eval(self, arr)?;
+        let index_eval = eval(self, index)?;
+        
+        match (arr_eval, index_eval) {
+            (Value::Array(arr), Value::Int(idx)) => {
+                let value = arr.get(idx as usize)
+                        .ok_or_else(|| format!("Index {} out of bound.", idx))?
+                        .clone();
+                Ok(value)
             }
-            _ => Err("Expected an array index operation.".to_string()),
+            _ => Err("Expected a valid integer index.".to_string()),
         }
     }
 
@@ -123,67 +137,75 @@ impl<'a> Evaluator for Interpreter<'a> {
     }
 
     fn eval_letbinding(&mut self, node: &ASTNode) -> Result<Value, String> {
-        let result = match node {
-            ASTNode::LetBinding { identifier, body } => {
-                let eval_value = eval(self, body)?;
-                match &**identifier {
-                    ASTNode::Identifier { name } => {
-                        self.env.put(name.clone(), eval_value);
-                        Ok(Value::Void(()))
-                    }
-                    _ => Err("Invalid variale binding operation.".to_string()),
-                }
-            }
-            _ => Err("Invalid variale binding operation.".to_string()),
+        let ASTNode::LetBinding { 
+            identifier, 
+            body 
+        } = node 
+        else {
+            return Err("Expected a valid variable binding operation.".to_string());
         };
+        let ASTNode::Identifier { name } = &**identifier 
+        else {
+            return Err("Expected a valid identifier for variable binding.".to_string());
+        };
+    
+        let eval_value = eval(self, body)?;
+        self.env.put(name.clone(), eval_value);
 
-        result
+        Ok(Value::Void(()))
     }
 
     fn eval_assgin(&mut self, node: &ASTNode) -> Result<Value, String> {
-        let result = match node {
-            ASTNode::Assign { identifier, body } => {
-                match &**identifier {
-                    ASTNode::Identifier { name } => {
-                        let eval_value = eval(self, body)?;
-                        let result = self.env.update(&name.clone(), eval_value);
-                        match result {
-                            Ok( _ ) => Ok(Value::Void(())),
-                            Err(err) => Err(err),
-                        }
-                    }
-                    _ => Err("Invalid an assignment operation.".to_string()),
-                }
-            }
-            _ => Err("Invalid an assignment operation.".to_string()),
+        let ASTNode::Assign { 
+            identifier, 
+            body 
+        } = node 
+        else {
+            return Err("Expected a valid assignment operation.".to_string());
         };
 
-        result
+        let ASTNode::Identifier { name } = &**identifier 
+        else {
+            return Err("Expected a valid identifier for assignment.".to_string());
+        };
+
+        let eval_value = eval(self, body)?;
+        let result = self.env.update(&name.clone(), eval_value);
+        
+        match result {
+            Ok( _ )  => Ok(Value::Void(())),
+            Err(err) => Err(err),
+        }
     }
 
     fn eval_statements(&mut self, node: &ASTNode) -> Result<Value, String> {
-        match node {
-            ASTNode::Statements { stmts } => {
-                let mut last_value = Value::Void(());
-                for stmt in stmts {
-                    last_value = eval(self, stmt)?;
-                }
-                Ok(last_value)
-            }
-            _ => Err("Expected valid of statement.".to_string()),
+        let ASTNode::Statements { stmts } = node 
+        else {
+            return Err("Expected a valid sequence of statements.".to_string());
+        };
+        let mut last_value = Value::Void(());
+        
+        for stmt in stmts {
+            last_value = eval(self, stmt)?;
         }
+        Ok(last_value)
+
     }
 
     fn eval_whileloop(&mut self, node: &ASTNode) -> Result<Value, String> {
-        match node {
-            ASTNode::WhileLoop { cond, body } => {
-                while matches!(eval(self, cond)?,Value::Bool(true)) {
-                    eval(self, body)?;
-                }
-                Ok(Value::Void(()))
-            }
-            _ => Err("Expected a while loop.".to_string()),
+        let ASTNode::WhileLoop { 
+            cond, 
+            body 
+        } = node 
+        else {
+            return Err("Expected a valid while loop.".to_string());
+        };
+        
+        while matches!(eval(self, cond)?, Value::Bool(true)) {
+            eval(self, body)?;
         }
+    
+        Ok(Value::Void(()))
     }
 
     fn eval_forloop(&mut self, node: &ASTNode) -> Result<Value, String> {
@@ -213,6 +235,29 @@ impl<'a> Evaluator for Interpreter<'a> {
         }
 
         Ok(Value::Void(()))
+    }
+
+    fn eval_ifstatement(&mut self, node: &ASTNode) -> Result<Value, String> {
+        let ASTNode::IfStatement { 
+            cond, 
+            then_branch, 
+            else_branch 
+        } = node 
+        else {
+            return Err("Expected a valid if statement.".to_string());
+        };
+
+        match eval(self, cond)? {
+            Value::Bool(true) => eval(self, then_branch),
+            Value::Bool(false) => {
+                if let Some(else_branch) = else_branch {
+                    eval(self, else_branch)
+                } else {
+                    Ok(Value::Void(()))
+                }
+            }
+            _ => Err("If statement condition must be a boolean expression.".to_string()),
+        }
     }
 }
 
@@ -391,5 +436,37 @@ mod test_inerpreter {
 
         assert!(result.is_ok());
         assert_eq!(env.get("sum"), Some(Value::Int(6)));
+    }
+
+    #[test]
+    fn test_if_statement() {
+        let mut env = Environment::new();
+        let mut interpreter = Interpreter::new(&mut env);
+        let ast = ASTNode::statements(vec![
+            ASTNode::let_binding(
+                ASTNode::identifier("x".to_string()),
+                ASTNode::numeric(0)
+            ),
+            ASTNode::if_statement(
+                ASTNode::boolean(true),
+                ASTNode::statements(vec![
+                    ASTNode::assign(
+                        ASTNode::identifier("x".to_string()),
+                        ASTNode::numeric(7)
+                    )
+                ]),
+                Some(ASTNode::statements(vec![
+                    ASTNode::assign(
+                        ASTNode::identifier("x".to_string()),
+                        ASTNode::numeric(3)
+                    )
+                ]))
+            )
+        ]);
+
+        let result = eval(&mut interpreter, &ast);
+    
+        assert!(result.is_ok());
+        assert_eq!(env.get("x"), Some(Value::Int(7)));
     }
 }
