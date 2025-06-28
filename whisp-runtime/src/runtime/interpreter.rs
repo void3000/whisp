@@ -53,10 +53,7 @@ impl<'a> Evaluator for Interpreter<'a> {
             return Err("Expected a valid boolean.".to_string());
         };
 
-        match value {
-            true => Ok(Value::Bool(true)),
-            false => Ok(Value::Bool(false)),
-        }
+        Ok(Value::Bool(*value))
     }
 
     fn eval_array(&mut self, node: &ASTNode) -> Result<Value, String> {
@@ -257,6 +254,84 @@ impl<'a> Evaluator for Interpreter<'a> {
                 }
             }
             _ => Err("If statement condition must be a boolean expression.".to_string()),
+        }
+    }
+
+    fn eval_function_def(&mut self, node: &ASTNode) -> Result<Value, String> {
+        let ASTNode::FunctionDef {
+            name,
+            params,
+            body
+        } = node
+        else {
+            return Err("Expected a valid function definition.".to_string());
+        };
+        let ASTNode::Identifier { name } = &**name 
+        else {
+            return Err("Expected a valid identifier as function name.".to_string());
+        };
+        let all_valid_parameters = params
+                .iter()
+                .all(|p| matches!(p, ASTNode::Identifier { .. }));
+        if !all_valid_parameters {
+            return Err("All function parameters must be identifiers.".to_string());
+        }
+        let fun_defition = Value::Function {
+            params: params.clone(),
+            body: body.clone()
+        };
+
+        self.env.put(name.clone(), fun_defition);
+        Ok(Value::Void(()))
+    }
+
+    fn eval_return(&mut self, node: &ASTNode) -> Result<Value, String> {
+        match node {
+            ASTNode::Return { value } => {
+                let eval_value = eval(self, value)?;
+                Ok(Value::Return(Box::new(eval_value)))
+            },
+            _ => Err("Expected a valid return statement.".to_string())
+        }
+    }
+
+    fn eval_function_call(&mut self, node: &ASTNode) -> Result<Value, String> {
+        let ASTNode::Call {
+            name,
+            args 
+        } = node 
+        else {
+            return Err("Expected a valid function call.".to_string());
+        };
+        let eval_fun = eval(self, name)?;
+        let eval_args: Vec<Value> = args
+                .iter()
+                .map(|arg| eval(self, arg).unwrap())
+                .collect();
+
+        match eval_fun {
+            Value::Function { params, body } => {
+                if eval_args.len() != params.len() {
+                    return Err(format!(
+                        "Expected {} parameters, but got {}", params.len(), eval_args.len()
+                    ));
+                }
+                
+                for (param, arg_val) in params.iter().zip(eval_args.into_iter()) {
+                    let ASTNode::Identifier { name } = param 
+                    else {
+                        return Err("Function parameters must be identifiers.".to_string());
+                    };
+                    self.env.put(name.clone(), arg_val);
+                }
+
+                let result = eval(self, &body)?;
+                match result {
+                    Value::Return(inner) => Ok(*inner),
+                    _ => Ok(Value::Void(())),
+                }
+            }
+            _ => Err("Error encountred while evaluating function call.".to_string())
         }
     }
 }
@@ -468,5 +543,33 @@ mod test_inerpreter {
     
         assert!(result.is_ok());
         assert_eq!(env.get("x"), Some(Value::Int(7)));
+    }
+
+    #[test]
+    fn test_function_call() {
+        let mut env = Environment::new();
+        let mut interpreter = Interpreter::new(&mut env);
+         let ast = ASTNode::statements(vec![
+            ASTNode::function_def(
+                ASTNode::identifier("return_value"),
+                vec![
+                    ASTNode::identifier("value")
+                ],
+                ASTNode::return_stmt(
+                    ASTNode::identifier("value")
+                )
+            ),
+            ASTNode::call(
+                ASTNode::identifier("return_value"),
+                vec![
+                    ASTNode::string("Hello world!")
+                ],
+            )
+        ]);
+
+        let result = eval(&mut interpreter, &ast);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Str("Hello world!".to_string()));
     }
 }
