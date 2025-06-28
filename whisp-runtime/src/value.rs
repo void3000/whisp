@@ -1,18 +1,15 @@
 use std::fmt;
 use whisp_parser::tree::ASTNode;
 
-pub type FunctionArgs = Vec<Value>;
-pub type List = Vec<Value>;
-
 #[derive(Debug, PartialEq)]
 pub enum Value {
     Bool(bool),
     Int(i32),
     Str(String),
-    Array(List),
+    Array(Vec<Value>),
     Void(()),
     Function {
-        params: FunctionArgs,
+        params: Vec<ASTNode>,
         body: Box<ASTNode>,
     },
     Return(Box<Value>),
