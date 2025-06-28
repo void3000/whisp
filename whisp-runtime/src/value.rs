@@ -4,6 +4,7 @@ use whisp_parser::tree::ASTNode;
 pub type FunctionArgs = Vec<Value>;
 pub type List = Vec<Value>;
 
+#[derive(Debug, PartialEq)]
 pub enum Value {
     Bool(bool),
     Int(i32),
