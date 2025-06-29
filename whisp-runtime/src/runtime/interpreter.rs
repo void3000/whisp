@@ -336,8 +336,9 @@ impl<'a> Evaluator for Interpreter<'a> {
     }
 }
 
+
 #[cfg(test)]
-mod test_inerpreter {
+mod test_interpreter {
     use super::*;
     use crate::value::Value;
     use crate::environment::Environment;
