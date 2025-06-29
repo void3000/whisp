@@ -375,3 +375,73 @@ terminal Identifier;
 Visual representation of the grammar was generated with [DrawGrammar](https://jacquev6.github.io/DrawGrammar/) 
 
 ![Whisp grammar](grammar.png)
+
+### Token Summary
+
+#### Keywords
+
+| Token Variant | Symbol   | Description          |
+| ------------- | -------- | -------------------- |
+| `Let`         | `let`    | Variable declaration |
+| `If`          | `if`     | Conditional start    |
+| `Elif`        | `elif`   | Else-if condition    |
+| `Else`        | `else`   | Else block           |
+| `While`       | `while`  | While loop           |
+| `For`         | `for`    | For loop             |
+| `In`          | `in`     | Membership operator  |
+| `Def`         | `def`    | Function definition  |
+| `Return`      | `return` | Return from function |
+
+#### Literals & Identifiers
+
+| Token Variant        | Example        | Description               |
+| -------------------- | -------------- | ------------------------- |
+| `Identifier(String)` | `"x"`          | Variable or function name |
+| `Int(i32)`           | `42`           | Integer literal           |
+| `Bool(bool)`         | `true`/`false` | Boolean literal           |
+| `String(String)`     | `"hello"`      | String literal            |
+
+#### Arithmetic Operators
+
+| Token Variant | Symbol | Description    |
+| ------------- | ------ | -------------- |
+| `Plus`        | `+`    | Addition       |
+| `Minus`       | `-`    | Subtraction    |
+| `Mul`         | `*`    | Multiplication |
+| `Div`         | `/`    | Division       |
+| `Mod`         | `%`    | Modulo         |
+
+#### Assignment & Comparison
+
+| Token Variant  | Symbol | Description           |
+| -------------- | ------ | --------------------- |
+| `Assign`       | `=`    | Assignment            |
+| `Equal`        | `==`   | Equality check        |
+| `GreaterThan`  | `>`    | Greater than          |
+| `LessThan`     | `<`    | Less than             |
+| `GreaterEqual` | `>=`   | Greater than or equal |
+| `LessEqual`    | `<=`   | Less than or equal    |
+
+#### Logical Operators
+
+| Token Variant | Symbol | Description |
+| ------------- | ------ | ----------- |
+| `And`         | `and`  | Logical AND |
+| `Or`          | `or`   | Logical OR  |
+
+#### Punctuation
+
+| Token Variant | Symbol | Description       |
+| ------------- | ------ | ----------------- |
+| `LParen`      | `(`    | Left parenthesis  |
+| `RParen`      | `)`    | Right parenthesis |
+| `LBrace`      | `{`    | Left brace        |
+| `RBrace`      | `}`    | Right brace       |
+| `LBracket`    | `[`    | Left bracket      |
+| `RBracket`    | `]`    | Right bracket     |
+| `Comma`       | `,`    | Comma             |
+| `Semicolon`   | `;`    | Semicolon         |
+
+### Token Finite State Machine
+
+![token-grammar](token-grammar.png)
