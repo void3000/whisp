@@ -1,7 +1,8 @@
+use std::rc::Rc;
 use std::fmt;
 use whisp_parser::tree::ASTNode;
+use crate::runtime::builtin::BuiltInFunction;
 
-#[derive(Debug, PartialEq)]
 pub enum Value {
     Bool(bool),
     Int(i32),
@@ -11,6 +12,9 @@ pub enum Value {
     Function {
         params: Vec<ASTNode>,
         body: Box<ASTNode>,
+    },
+    BuiltInFunction {
+        callback: Rc<dyn BuiltInFunction>
     },
     Return(Box<Value>),
 }
@@ -84,6 +88,7 @@ impl fmt::Display for Value {
             Value::Void(()) => Ok(()),
             Value::Return(inner) => write!(f, "{inner}"),
             Value::Function { .. } => write!(f, "Function"),
+            Value::BuiltInFunction { .. } => write!(f, "Builtin function"),
         }
     }
 }
@@ -101,6 +106,38 @@ impl Clone for Value {
                 params: params.clone(),
                 body: body.clone(),
             },
+            Value::BuiltInFunction { callback } => Value::BuiltInFunction {
+                callback: callback.clone(),
+            },
+        }
+    }
+}
+
+impl fmt::Debug for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Value::BuiltInFunction { .. } => write!(f, "BuiltInFunction(<opaque>)"),
+            other => write!(f, "{:?}", other),
+        }
+    }
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Value::Bool(a), Value::Bool(b)) => a == b,
+            (Value::Int(a), Value::Int(b)) => a == b,
+            (Value::Str(a), Value::Str(b)) => a == b,
+            (Value::Array(a), Value::Array(b)) => a == b,
+            (Value::Void(_), Value::Void(_)) => true,
+            (Value::Return(a), Value::Return(b)) => a == b,
+            (Value::BuiltInFunction { callback: a }, 
+             Value::BuiltInFunction { callback: b }) => {
+                Rc::ptr_eq(a, b)
+            }
+            (Value::Function { .. }, Value::Function { .. }) => false,
+
+            _ => false,
         }
     }
 }
