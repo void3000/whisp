@@ -349,7 +349,10 @@ impl<'a> Evaluator for Interpreter<'a> {
                     Value::Return(inner) => Ok(*inner),
                     _ => Ok(Value::Void(())),
                 }
-            }
+            },
+            Value::BuiltInFunction { callback } => {
+                Ok(callback.call(eval_args))
+            },
             _ => Err("Error encountred while evaluating function call.".to_string())
         }
     }
