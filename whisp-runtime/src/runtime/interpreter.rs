@@ -181,10 +181,11 @@ impl<'a> Evaluator for Interpreter<'a> {
             return Err("Expected a valid sequence of statements.".to_string());
         };
         let mut last_value = Value::Void(());
-        
+
         for stmt in stmts {
             last_value = eval(self, stmt)?;
         }
+
         Ok(last_value)
 
     }
@@ -198,9 +199,12 @@ impl<'a> Evaluator for Interpreter<'a> {
             return Err("Expected a valid while loop.".to_string());
         };
         
+        self.env.enter_scope();
+
         while matches!(eval(self, cond)?, Value::Bool(true)) {
             eval(self, body)?;
         }
+        self.env.exit_scope();
     
         Ok(Value::Void(()))
     }
@@ -226,10 +230,13 @@ impl<'a> Evaluator for Interpreter<'a> {
             return Err("Expected a valid identifier for the for-loop.".to_string());
         };
 
+        self.env.enter_scope();
+
         for item in elements {
             self.env.put(name.clone(), item);
             eval(self, body)?;
         }
+        self.env.exit_scope();
 
         Ok(Value::Void(()))
     }
@@ -245,10 +252,18 @@ impl<'a> Evaluator for Interpreter<'a> {
         };
 
         match eval(self, cond)? {
-            Value::Bool(true) => eval(self, then_branch),
+            Value::Bool(true) => {
+                self.env.enter_scope();
+                let result = eval(self, then_branch);
+                self.env.exit_scope();
+                result
+            },
             Value::Bool(false) => {
                 if let Some(else_branch) = else_branch {
-                    eval(self, else_branch)
+                    self.env.enter_scope();
+                    let result = eval(self, then_branch);
+                    self.env.exit_scope();
+                    result
                 } else {
                     Ok(Value::Void(()))
                 }
@@ -317,6 +332,8 @@ impl<'a> Evaluator for Interpreter<'a> {
                     ));
                 }
                 
+                self.env.enter_scope();
+                
                 for (param, arg_val) in params.iter().zip(eval_args.into_iter()) {
                     let ASTNode::Identifier { name } = param 
                     else {
@@ -326,6 +343,8 @@ impl<'a> Evaluator for Interpreter<'a> {
                 }
 
                 let result = eval(self, &body)?;
+
+                self.env.exit_scope();
                 match result {
                     Value::Return(inner) => Ok(*inner),
                     _ => Ok(Value::Void(())),
@@ -550,7 +569,7 @@ mod test_interpreter {
     fn test_function_call() {
         let mut env = Environment::new();
         let mut interpreter = Interpreter::new(&mut env);
-         let ast = ASTNode::statements(vec![
+        let ast = ASTNode::statements(vec![
             ASTNode::function_def(
                 ASTNode::identifier("return_value"),
                 vec![
@@ -572,5 +591,41 @@ mod test_interpreter {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Str("Hello world!".to_string()));
+    }
+
+    #[test]
+    fn test_variable_scoping() {
+        let mut env = Environment::new();
+        let mut interpreter = Interpreter::new(&mut env);
+        let ast = ASTNode::statements(vec![
+            ASTNode::let_binding(
+                ASTNode::identifier("x".to_string()),
+                ASTNode::numeric(5)
+            ),
+            ASTNode::let_binding(
+                ASTNode::identifier("y".to_string()),
+                ASTNode::numeric(3)
+            ),
+            ASTNode::statements(vec![
+                ASTNode::let_binding(
+                    ASTNode::identifier("x".to_string()),
+                    ASTNode::numeric(7)
+                ),
+                ASTNode::assign(
+                    ASTNode::identifier("y".to_string()),
+                    ASTNode::binary_op(
+                        Operation::Add,
+                        ASTNode::identifier("y".to_string()),
+                        ASTNode::identifier("x".to_string())
+                    )
+                )
+            ]),
+            ASTNode::identifier("y".to_string())
+        ]);
+
+        let result = eval(&mut interpreter, &ast);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Int(10));
     }
 }
