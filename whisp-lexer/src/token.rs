@@ -48,5 +48,5 @@ pub enum Token {
     Semicolon,    // ;
 
     // End of file/input
-    Eof,
+    Eof
 }
