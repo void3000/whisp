@@ -1,5 +1,6 @@
 use whisp_lexer::token::Token;
 use crate::tree::ASTNode;
+use crate::symbol::SymbolTable;
 
 pub trait Parser {
     fn peek(&self) -> &Token;
@@ -9,21 +10,24 @@ pub trait Parser {
     fn parse(&mut self) -> Result<ASTNode, String>;
 }
 
-pub struct LLParser {
+pub struct LLParser<'a> {
     stream: Vec<Token>,
-    cursor: usize
+    cursor: usize,
+
+    pub symbols: &'a mut SymbolTable
 }
 
-impl LLParser {
-    pub fn new(stream: Vec<Token>) -> Self {
+impl<'a> LLParser<'a> {
+    pub fn new(stream: Vec<Token>, symbols: &'a mut SymbolTable) -> Self {
         LLParser {
             stream,
             cursor: 0,
+            symbols: symbols
         }
     }
 }
 
-impl Parser for LLParser {
+impl<'a> Parser for LLParser<'a> {
     fn peek(&self) -> &Token {
         self.stream
             .get(self.cursor)

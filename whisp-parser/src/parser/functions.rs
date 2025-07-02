@@ -1,14 +1,20 @@
 use crate::parser::ll_parser::{ Parser, LLParser };
+use crate::symbol::{ SymbolTable, SymbolInfo };
 use crate::tree::ASTNode;
 use crate::ops::Operation;
 
 use whisp_lexer::token::Token;
 
-impl LLParser {
+impl<'a> LLParser<'a> {
     /// Function ::= 'def' Identifier '(' Params ')' Block
     pub fn parse_function_def(&mut self) -> Result<ASTNode, String> {
         self.expect(Token::Def);
+
         let identifier = self.parse_identifier()?;
+        let ASTNode::Identifier { ref name } = identifier 
+        else {
+            return Err("Expected function name identifier after 'def'".to_string());
+        };
 
         self.expect(Token::LParen);
         let params = self.parse_params()?;
@@ -16,14 +22,24 @@ impl LLParser {
 
         let body = self.parse_block()?;
 
+        self.symbols.define(name.clone(), SymbolInfo);
+
         Ok(ASTNode::function_def(identifier, params, body))
     }
 
     /// Call ::= Identifier '(' Args ')'
     pub fn parse_call_function(&mut self) -> Result<ASTNode, String> {
         let identifier = self.parse_identifier()?;
-        self.expect(Token::LParen);
+        let ASTNode::Identifier { ref name } = identifier 
+        else {
+            return Err("Expected function identifier".to_string());
+        };
 
+        if self.symbols.resolve(name).is_none() {
+            return Err(format!("Undefined function name found '{}'", name));
+        }
+
+        self.expect(Token::LParen);
         let args = self.parse_args()?;
         self.expect(Token::RParen);
 
@@ -76,7 +92,20 @@ impl LLParser {
             Token::String(_)
             | Token::Int(_)
             | Token::Bool(_) => self.parse_literal(),
-            Token::Identifier(_) => self.parse_identifier(),
+            Token::Identifier(_) => {
+                let identifier = self.parse_identifier();
+
+                let Ok(ASTNode::Identifier { ref name }) = identifier 
+                else {
+                    return Err(format!("Expected identifier as argument, got {:?}", identifier));
+                };
+
+                if self.symbols.resolve(name).is_none() {
+                    return Err(format!("Undeclared variable '{}'", name));
+                }
+
+                identifier
+            },
             _ => Err(format!("Expected argument term, found {:?}", self.peek())),
         }
     }
@@ -105,6 +134,7 @@ mod test_functions {
 
     #[test]
     fn test_function_def() {
+        let mut symbols = SymbolTable::new();
         let tokens = vec![
             Token::Def,
             Token::Identifier("my_function".into()),
@@ -121,11 +151,12 @@ mod test_functions {
             Token::Add,
             Token::Identifier("b".into()),
             Token::Semicolon,
-            Token::RBrace
+            Token::RBrace,
+            Token::Eof
         ];
 
-        let mut parser = LLParser::new(tokens);
-        let ast = parser.parse_statements();
+        let mut parser = LLParser::new(tokens, &mut symbols);
+        let ast = parser.parse();
 
         assert!(ast.is_ok());
 
@@ -153,25 +184,100 @@ mod test_functions {
 
     #[test]
     fn test_call_function() {
+        let mut symbols = SymbolTable::new();
         let tokens = vec![
+            Token::Def,
             Token::Identifier("my_function".into()),
             Token::LParen,
+            Token::Identifier("a".into()),
+            Token::Comma,
+            Token::Identifier("b".into()),
+            Token::RParen,
+            Token::LBrace,
+            Token::Let,
+            Token::Identifier("result".into()),
+            Token::Assign,
+            Token::Identifier("a".into()),
+            Token::Add,
+            Token::Identifier("b".into()),
+            Token::Semicolon,
+            Token::RBrace,
+            Token::Let,
+            Token::Identifier("a".into()),
+            Token::Assign,
             Token::Int(5),
+            Token::Semicolon,
+            Token::Identifier("my_function".into()),
+            Token::LParen,
+            Token::Identifier("a".into()),
             Token::Comma,
             Token::Int(10),
             Token::RParen,
+            Token::Semicolon,
+            Token::Eof
         ];
-        let mut parser = LLParser::new(tokens);
-        let ast = parser.parse_call_function();
+        let mut parser = LLParser::new(tokens, &mut symbols);
+        let ast = parser.parse();
 
         assert!(ast.is_ok());
-        match ast.unwrap() {
-            ASTNode::Call { name, args } => {
-                assert_eq!(name, Box::new(ASTNode::identifier("my_function")));
-                assert_eq!(args.len(), 2);
-                assert_eq!(args[0], ASTNode::numeric(5));
-            },
-            _ => panic!("Expected a function call"),
-        }
+        let expected_ast = ASTNode::statements(vec![
+            ASTNode::function_def(
+                ASTNode::identifier("my_function"),
+                vec![
+                    ASTNode::identifier("a"),
+                    ASTNode::identifier("b"),
+                ],
+                ASTNode::statements(vec![
+                    ASTNode::let_binding(
+                        ASTNode::identifier("result"),
+                        ASTNode::binary_op(
+                            Operation::Add,
+                            ASTNode::identifier("a"),
+                            ASTNode::identifier("b"),
+                        ),
+                    ),
+                ]),
+            ),
+            ASTNode::let_binding(
+                ASTNode::identifier("a"),
+                ASTNode::numeric(5),
+            ),
+            ASTNode::call(
+                ASTNode::identifier("my_function"),
+                vec![
+                    ASTNode::identifier("a"),
+                    ASTNode::numeric(10),
+                ],
+            ),
+        ]);
+
+        assert_eq!(ast.unwrap(), expected_ast);
+    }
+
+    #[test]
+    fn test_call_undefined_function_then_fail() {
+        let mut symbols = SymbolTable::new();
+        let tokens = vec![
+            Token::Let,
+            Token::Identifier("a".into()),
+            Token::Assign,
+            Token::Int(5),
+            Token::Semicolon,
+            Token::Identifier("my_function".into()),
+            Token::LParen,
+            Token::Identifier("a".into()),
+            Token::Comma,
+            Token::Int(10),
+            Token::RParen,
+            Token::Semicolon,
+            Token::Eof
+        ];
+        let mut parser = LLParser::new(tokens, &mut symbols);
+        let ast = parser.parse();
+
+        assert!(ast.is_err());
+        
+        let err = ast.unwrap_err();
+        assert!(err.contains("Undefined function name found 'my_function'"));
     }
 }

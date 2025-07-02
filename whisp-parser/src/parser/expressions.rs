@@ -1,10 +1,11 @@
 use crate::parser::ll_parser::{ Parser, LLParser };
+use crate::symbol::{ SymbolTable, SymbolInfo };
 use crate::tree::ASTNode;
 use crate::ops::Operation;
 
 use whisp_lexer::token::Token;
 
-impl LLParser {
+impl<'a> LLParser<'a> {
     /// Expr ::= AssignmentExpr
     pub fn parse_expression(&mut self) -> Result<ASTNode, String> {
         self.parse_assignment_expr()
@@ -16,6 +17,13 @@ impl LLParser {
            matches!(self.lookahead(), Token::Assign) 
         {
             let identifier = self.parse_identifier()?;
+
+            if let ASTNode::Identifier { ref name } = identifier {
+                if self.symbols.resolve(name).is_none() {
+                    return Err(format!("Undeclared variable '{}'.", name));
+                }
+            }
+
             self.advance();
             let body = self.parse_expression()?;
             return Ok(ASTNode::assign(identifier, body));
@@ -383,14 +391,21 @@ mod test_expressions {
 
     #[test]
     fn test_parse_assignment_expr() {
-        let mut parser = LLParser::new(vec![
-            Token::Identifier("x".into()),
-            Token::Assign,
-            Token::Int(42),
-            Token::Semicolon,
-        ]);
+        let mut symbols = SymbolTable::new();
 
-        let result = parser.parse_expression();
+        // Mock declartion of 'x' variable.
+        symbols.define("x".to_string(), SymbolInfo);
+
+        let mut parser = LLParser::new(vec![
+                Token::Identifier("x".into()),
+                Token::Assign,
+                Token::Int(42),
+                Token::Semicolon,
+            ],
+            &mut symbols
+        );
+
+        let result = parser.parse_assignment_expr();
 
         match result {
             Ok(ast) => {
@@ -405,14 +420,17 @@ mod test_expressions {
 
     #[test]
     fn test_parse_arithmetic_expr() {
+        let mut symbols = SymbolTable::new();
         let mut parser = LLParser::new(vec![
-            Token::Int(5),
-            Token::Add,
-            Token::Int(3),
-            Token::Mul,
-            Token::Int(2),
-            Token::Semicolon,
-        ]);
+                Token::Int(5),
+                Token::Add,
+                Token::Int(3),
+                Token::Mul,
+                Token::Int(2),
+                Token::Semicolon,
+            ],
+            &mut symbols
+        );
         let result = parser.parse_expression();
 
         match result {
@@ -433,7 +451,12 @@ mod test_expressions {
 
     #[test]
     fn test_parse_identifier() {
-        let mut parser = LLParser::new(vec![Token::Identifier("y".into())]);
+        let mut symbols = SymbolTable::new();
+        let mut parser = LLParser::new(vec![
+                Token::Identifier("y".into())
+            ], 
+            &mut symbols
+        );
         let ast = parser.parse_identifier().unwrap();
 
         assert_eq!(ast, ASTNode::identifier("y"));
@@ -441,17 +464,20 @@ mod test_expressions {
 
     #[test]
     fn test_parse_literal() {
+        let mut symbols = SymbolTable::new();
         let mut parser = LLParser::new(vec![
-            Token::Int(10),
-            Token::String("hello".into()),
-            Token::Bool(true),
-            Token::Array,
-            Token::LBracket,
-            Token::Int(1),
-            Token::Comma,
-            Token::Int(2),
-            Token::RBracket
-        ]);
+                Token::Int(10),
+                Token::String("hello".into()),
+                Token::Bool(true),
+                Token::Array,
+                Token::LBracket,
+                Token::Int(1),
+                Token::Comma,
+                Token::Int(2),
+                Token::RBracket
+            ],
+            &mut symbols
+        );
 
         let int_ast = parser.parse_literal().unwrap();
         assert_eq!(int_ast, ASTNode::numeric(10));
