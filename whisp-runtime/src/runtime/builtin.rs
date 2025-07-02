@@ -118,7 +118,7 @@ mod test_builtin_functions {
     use crate::environment::Environment;
 
     #[test]
-    fn test_print() {
+    fn test_max() {
         let mut env = Environment::new();
 
         register_builtin(Rc::new(MaxFn), &mut env);

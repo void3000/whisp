@@ -1,9 +1,10 @@
 use crate::parser::ll_parser::{ Parser, LLParser };
+use crate::symbol::{ SymbolTable, SymbolInfo };
 use crate::tree::ASTNode;
 
 use whisp_lexer::token::Token;
 
-impl LLParser {
+impl<'a> LLParser<'a> {
     /// Stmts ::= Stmt Stmts | ε
     pub fn parse_statements(&mut self) -> Result<ASTNode, String> {
         let mut stmts = Vec::<ASTNode>::new();
@@ -20,7 +21,7 @@ impl LLParser {
 
     /// Stmt ::= Expr ';' | LetBinding | FunctionDef | Block | ControlFlow
     pub fn parse_statement(&mut self) -> Result<ASTNode, String> {
-        let result = match self.peek() {
+        match self.peek() {
             Token::If
             | Token::While 
             | Token::For 
@@ -30,31 +31,46 @@ impl LLParser {
             Token::LBrace   => self.parse_block(),
             _ => { 
                 let expr = self.parse_expression()?;
+
+                if let ASTNode::Identifier { ref name } = expr {
+                    if self.symbols.resolve(name).is_none() {
+                        return Err(format!("Undeclared variable '{}'.", name));
+                    }
+                }
                 self.expect(Token::Semicolon);
+
                 Ok(expr)
             }
-        };
-
-        result
+        }
     }
 
     /// LetBinding ::= 'let' Identifier '=' Expr ';'
     pub fn parse_letbinding(&mut self) -> Result<ASTNode, String> {
         self.expect(Token::Let);
-        let identifier = self.parse_identifier()?;
 
+        let identifier = self.parse_identifier()?;
+        let ASTNode::Identifier { name } = &identifier else {
+            return Err("Expected identifier after 'let'".to_string());
+        };
         self.expect(Token::Assign);
+
         let body = self.parse_expression()?;
+
         self.expect(Token::Semicolon);
+        self.symbols.define(name.clone(), SymbolInfo);
 
         Ok(ASTNode::let_binding(identifier, body))
     }
 
     /// Block ::= '{' Stmts '}'
     pub fn parse_block(&mut self) -> Result<ASTNode, String> {
+        self.symbols.enter_scope();
         self.expect(Token::LBrace);
+
         let stmts = self.parse_statements()?;
+
         self.expect(Token::RBrace);
+        self.symbols.exit_scope();
 
         Ok(stmts)
     }
@@ -68,6 +84,7 @@ mod test_statements {
 
     #[test]
     fn test_parse_letbinding_statements() {
+        let mut symbols = SymbolTable::new();
         let tokens = vec![
             Token::Let,
             Token::Identifier("x".into()),
@@ -81,7 +98,7 @@ mod test_statements {
             Token::Semicolon
         ];
 
-        let mut parser = LLParser::new(tokens);
+        let mut parser = LLParser::new(tokens, &mut symbols);
         let ast = parser.parse_statements();
 
         assert!(ast.is_ok());
@@ -104,6 +121,7 @@ mod test_statements {
 
     #[test]
     fn test_block_statements() {
+        let mut symbols = SymbolTable::new();
         let tokens = vec![
             Token::LBrace,
             Token::Let,
@@ -114,7 +132,7 @@ mod test_statements {
             Token::RBrace
         ];
 
-        let mut parser = LLParser::new(tokens);
+        let mut parser = LLParser::new(tokens, &mut symbols);
         let ast = parser.parse_statements();
 
         assert!(ast.is_ok());
