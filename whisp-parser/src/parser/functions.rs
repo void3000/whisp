@@ -4,8 +4,12 @@ use crate::tree::ASTNode;
 use crate::ops::Operation;
 
 use whisp_lexer::token::Token;
+use whisp_lexer::lexer::TokenIterator;
 
-impl<'a> LLParser<'a> {
+impl<'a, T> LLParser<'a, T> 
+where
+    T: TokenIterator<Item = Token>,
+{
     /// Function ::= 'def' Identifier '(' Params ')' Block
     pub fn parse_function_def(&mut self) -> Result<ASTNode, String> {
         self.expect(Token::Def);
@@ -130,11 +134,11 @@ impl<'a> LLParser<'a> {
 mod test_functions {
     use super::*;
     use crate::parser::ll_parser::LLParser;
+    use crate::mock::MockStream;
     use whisp_lexer::token::Token;
 
     #[test]
     fn test_function_def() {
-        let mut symbols = SymbolTable::new();
         let tokens = vec![
             Token::Def,
             Token::Identifier("my_function".into()),
@@ -154,8 +158,11 @@ mod test_functions {
             Token::RBrace,
             Token::Eof
         ];
+        let stream = MockStream::new(tokens);
 
-        let mut parser = LLParser::new(tokens, &mut symbols);
+        let mut symbols = SymbolTable::new();
+        let mut parser = LLParser::new(stream, &mut symbols);
+
         let ast = parser.parse();
 
         assert!(ast.is_ok());
@@ -184,7 +191,6 @@ mod test_functions {
 
     #[test]
     fn test_call_function() {
-        let mut symbols = SymbolTable::new();
         let tokens = vec![
             Token::Def,
             Token::Identifier("my_function".into()),
@@ -216,7 +222,11 @@ mod test_functions {
             Token::Semicolon,
             Token::Eof
         ];
-        let mut parser = LLParser::new(tokens, &mut symbols);
+        let stream = MockStream::new(tokens);
+
+        let mut symbols = SymbolTable::new();
+        let mut parser = LLParser::new(stream, &mut symbols);
+        
         let ast = parser.parse();
 
         assert!(ast.is_ok());
@@ -256,7 +266,6 @@ mod test_functions {
 
     #[test]
     fn test_call_undefined_function_then_fail() {
-        let mut symbols = SymbolTable::new();
         let tokens = vec![
             Token::Let,
             Token::Identifier("a".into()),
@@ -272,7 +281,10 @@ mod test_functions {
             Token::Semicolon,
             Token::Eof
         ];
-        let mut parser = LLParser::new(tokens, &mut symbols);
+        let stream = MockStream::new(tokens);
+        let mut symbols = SymbolTable::new();
+
+        let mut parser = LLParser::new(stream, &mut symbols);
         let ast = parser.parse();
 
         assert!(ast.is_err());

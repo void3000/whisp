@@ -1,6 +1,7 @@
 use crate::environment::Environment;
 use crate::value::Value;
 
+use whisp_parser::symbol::{ SymbolTable, SymbolInfo };
 use std::rc::Rc;
 
 /// Lessons:
@@ -20,16 +21,22 @@ pub trait BuiltInFunction {
     fn call(&self, arg: Vec<Value>) -> Value;
 }
 
-fn register_builtin(fun: Rc<dyn BuiltInFunction>, env: &mut Environment) {
+pub fn register_builtin(
+    fun: Rc<dyn BuiltInFunction>, 
+    env: &mut Environment, 
+    symb: &mut SymbolTable
+) {
     env.put(
         fun.name().to_string(), 
         Value::BuiltInFunction {
-            callback: fun
+            callback: fun.clone()
         }
     );
+
+    symb.define(fun.name().to_string(), SymbolInfo);
 }
 
-fn register_builtins(env: &mut Environment) {
+pub fn register_builtins(env: &mut Environment, symb: &mut SymbolTable) {
     let builtins: Vec<Rc<dyn BuiltInFunction>> = vec![
         Rc::new(PrintFn),
         Rc::new(MaxFn),
@@ -37,7 +44,7 @@ fn register_builtins(env: &mut Environment) {
     ];
 
     for builtin in builtins {
-        register_builtin(builtin, env);
+        register_builtin(builtin, env, symb);
     }
 }
 
@@ -120,8 +127,9 @@ mod test_builtin_functions {
     #[test]
     fn test_max() {
         let mut env = Environment::new();
+        let mut symbols = SymbolTable::new();
 
-        register_builtin(Rc::new(MaxFn), &mut env);
+        register_builtin(Rc::new(MaxFn), &mut env, &mut symbols);
         
         let builtin_fun = env.get("max");
         let args = vec![Value::Int(3), Value::Int(4)];

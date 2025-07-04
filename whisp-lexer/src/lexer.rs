@@ -1,6 +1,10 @@
 use std::str::Chars;
 use crate::token::Token;
 
+/// Lessons:
+/// (1) Avoid use of generics on traits, especially
+///     if th return value is a generic. Rather use
+///     associate types.
 pub trait TokenIterator {
     type Item;
 
@@ -13,11 +17,11 @@ pub trait Collection {
     fn stream(&self) -> Self::Iter;
 }
 
-struct Stream<'a> {
+pub struct Stream<'a> {
     chars: std::iter::Peekable<Chars<'a>>
 }
 
-struct Lexer<'a> {
+pub struct Lexer<'a> {
     input: &'a str
 }
 
@@ -116,6 +120,7 @@ impl<'a> TokenIterator for Stream<'a> {
                         "in"        => Token::In,
                         "def"       => Token::Def,
                         "return"    => Token::Return,
+                        "array"     => Token::Array,
                         "true"      => Token::Bool(true),
                         "false"     => Token::Bool(false),
                         _           => Token::Identifier(ident),
@@ -140,8 +145,8 @@ impl<'a> Collection for Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    fn new(input: &'a str) -> Self {
-        Lexer { input: input }
+    pub fn new(input: &'a str) -> Self {
+        Self { input }
     }
 }
 

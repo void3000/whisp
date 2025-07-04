@@ -4,8 +4,12 @@ use crate::tree::ASTNode;
 
 
 use whisp_lexer::token::Token;
+use whisp_lexer::lexer::TokenIterator;
 
-impl<'a> LLParser<'a> {
+impl<'a, T> LLParser<'a, T> 
+where
+    T: TokenIterator<Item = Token>,
+{
     /// ControlFlow ::= IfStatement | WhileStatement | ForStatement | Return
     pub fn parse_control_flow(&mut self) -> Result<ASTNode, String> {
         match self.peek() {
@@ -82,11 +86,14 @@ impl<'a> LLParser<'a> {
 mod test_control_flow {
     use super::*;
     use whisp_lexer::token::Token;
+    use crate::mock::MockStream;
+    use crate::parser::ll_parser::LLParser;
+    use crate::tree::{ ASTNode };
+    use crate::symbol::SymbolTable;
 
     #[test]
     fn test_parse_if_statement() {
-        let mut symbols = SymbolTable::new();
-        let mut parser = LLParser::new(vec![
+        let tokens = vec![
             Token::If,
             Token::LParen,
             Token::Bool(true),
@@ -102,9 +109,10 @@ mod test_control_flow {
             Token::Int(4),
             Token::Semicolon,
             Token::RBrace,
-        ],
-        &mut symbols
-    );
+        ];
+        let stream = MockStream::new(tokens);
+        let mut symbols = SymbolTable::new();
+        let mut parser = LLParser::new(stream, &mut symbols);
 
         let result = parser.parse_control_flow();
         assert!(result.is_ok());
@@ -126,20 +134,20 @@ mod test_control_flow {
 
     #[test]
     fn test_parse_if_statement_fail_when_non_bool_expr() {
+        let tokens = vec![
+            Token::If,
+            Token::Int(1),
+            Token::Add,
+            Token::Int(2),
+            Token::LBrace,
+            Token::Return,
+            Token::Int(7),
+            Token::Semicolon,
+            Token::RBrace,
+        ];
+        let stream = MockStream::new(tokens);
         let mut symbols = SymbolTable::new();
-        let mut parser = LLParser::new(vec![
-                Token::If,
-                Token::Int(1),
-                Token::Add,
-                Token::Int(2),
-                Token::LBrace,
-                Token::Return,
-                Token::Int(7),
-                Token::Semicolon,
-                Token::RBrace
-            ],
-            &mut symbols
-        );
+        let mut parser = LLParser::new(stream, &mut symbols);
 
         let result = parser.parse_control_flow();
 
@@ -149,38 +157,36 @@ mod test_control_flow {
 
     #[test]
     fn test_parse_return_statement() {
+        let tokens = vec![
+            Token::Return,
+            Token::Int(42),
+            Token::Semicolon,
+        ];
+        let stream = MockStream::new(tokens);
         let mut symbols = SymbolTable::new();
-        let mut parser = LLParser::new(vec![
-                Token::Return,
-                Token::Int(42),
-                Token::Semicolon,
-            ],
-            &mut symbols
-        );
+        let mut parser = LLParser::new(stream, &mut symbols);
 
         let result = parser.parse_control_flow();
-
         assert!(result.is_ok());
-        
-        let ast = result.unwrap();
 
+        let ast = result.unwrap();
         assert_eq!(ast, ASTNode::return_stmt(ASTNode::numeric(42)));
     }
 
     #[test]
     fn test_parse_while_statement() {
+        let tokens = vec![
+            Token::While,
+            Token::Bool(false),
+            Token::LBrace,
+            Token::Return,
+            Token::Int(0),
+            Token::Semicolon,
+            Token::RBrace,
+        ];
+        let stream = MockStream::new(tokens);
         let mut symbols = SymbolTable::new();
-        let mut parser = LLParser::new(vec![
-                Token::While,
-                Token::Bool(false),
-                Token::LBrace,
-                Token::Return,
-                Token::Int(0),
-                Token::Semicolon,
-                Token::RBrace,
-            ],
-            &mut symbols
-        );
+        let mut parser = LLParser::new(stream, &mut symbols);
 
         let result = parser.parse_control_flow();
         assert!(result.is_ok());
@@ -198,25 +204,25 @@ mod test_control_flow {
 
     #[test]
     fn test_parse_for_statement() {
+        let tokens = vec![
+            Token::For,
+            Token::Identifier("i".into()),
+            Token::In,
+            Token::Array,
+            Token::LBracket,
+            Token::Int(7),
+            Token::Comma,
+            Token::Int(3),
+            Token::RBracket,
+            Token::LBrace,
+            Token::Return,
+            Token::Identifier("i".into()),
+            Token::Semicolon,
+            Token::RBrace,
+        ];
+        let stream = MockStream::new(tokens);
         let mut symbols = SymbolTable::new();
-        let mut parser = LLParser::new(vec![
-                Token::For,
-                Token::Identifier("i".into()),
-                Token::In,
-                Token::Array,
-                Token::LBracket,
-                Token::Int(7),
-                Token::Comma,
-                Token::Int(3),
-                Token::RBracket,
-                Token::LBrace,
-                Token::Return,
-                Token::Identifier("i".into()),
-                Token::Semicolon,
-                Token::RBrace,
-            ],
-            &mut symbols
-        );
+        let mut parser = LLParser::new(stream, &mut symbols);
 
         let result = parser.parse_control_flow();
         assert!(result.is_ok());

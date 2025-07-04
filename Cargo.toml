@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
-    "whisp",
+    "whisp-cli",
     "whisp-lexer",
     "whisp-parser",
     "whisp-runtime",
@@ -12,7 +12,7 @@ repository = "https://github.com/void3000/whisp"
 edition = "2024"
 
 [patch.crates-io]
-whisp = { path = "whisp" }
+whisp_cli = { path = "whisp-cli" }
 whisp_lexer = { path = "whisp-lexer" }
 whisp_parser = { path = "whisp-parser" }
 whisp_runtime = { path = "whisp-runtime" }
