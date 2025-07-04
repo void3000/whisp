@@ -3,8 +3,12 @@ use crate::symbol::{ SymbolTable, SymbolInfo };
 use crate::tree::ASTNode;
 
 use whisp_lexer::token::Token;
+use whisp_lexer::lexer::TokenIterator;
 
-impl<'a> LLParser<'a> {
+impl<'a, T> LLParser<'a, T> 
+where
+    T: TokenIterator<Item = Token>,
+{
     /// Stmts ::= Stmt Stmts | ε
     pub fn parse_statements(&mut self) -> Result<ASTNode, String> {
         let mut stmts = Vec::<ASTNode>::new();
@@ -80,11 +84,11 @@ impl<'a> LLParser<'a> {
 mod test_statements {
     use super::*;
     use crate::parser::ll_parser::LLParser;
+    use crate::mock::MockStream;
     use whisp_lexer::token::Token;
 
     #[test]
     fn test_parse_letbinding_statements() {
-        let mut symbols = SymbolTable::new();
         let tokens = vec![
             Token::Let,
             Token::Identifier("x".into()),
@@ -97,8 +101,11 @@ mod test_statements {
             Token::Int(100),
             Token::Semicolon
         ];
+        let stream = MockStream::new(tokens);
 
-        let mut parser = LLParser::new(tokens, &mut symbols);
+        let mut symbols = SymbolTable::new();
+        let mut parser = LLParser::new(stream, &mut symbols);
+
         let ast = parser.parse_statements();
 
         assert!(ast.is_ok());
@@ -121,7 +128,6 @@ mod test_statements {
 
     #[test]
     fn test_block_statements() {
-        let mut symbols = SymbolTable::new();
         let tokens = vec![
             Token::LBrace,
             Token::Let,
@@ -131,8 +137,11 @@ mod test_statements {
             Token::Semicolon,
             Token::RBrace
         ];
+        let stream = MockStream::new(tokens);
 
-        let mut parser = LLParser::new(tokens, &mut symbols);
+        let mut symbols = SymbolTable::new();
+        let mut parser = LLParser::new(stream, &mut symbols);
+
         let ast = parser.parse_statements();
 
         assert!(ast.is_ok());

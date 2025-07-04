@@ -261,7 +261,7 @@ impl<'a> Evaluator for Interpreter<'a> {
             Value::Bool(false) => {
                 if let Some(else_branch) = else_branch {
                     self.env.enter_scope();
-                    let result = eval(self, then_branch);
+                    let result = eval(self, else_branch);
                     self.env.exit_scope();
                     result
                 } else {

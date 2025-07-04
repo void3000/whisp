@@ -4,8 +4,12 @@ use crate::tree::ASTNode;
 use crate::ops::Operation;
 
 use whisp_lexer::token::Token;
+use whisp_lexer::lexer::TokenIterator;
 
-impl<'a> LLParser<'a> {
+impl<'a, T> LLParser<'a, T> 
+where
+    T: TokenIterator<Item = Token>,
+{
     /// Expr ::= AssignmentExpr
     pub fn parse_expression(&mut self) -> Result<ASTNode, String> {
         self.parse_assignment_expr()
@@ -182,7 +186,8 @@ impl<'a> LLParser<'a> {
                 self.expect(Token::RParen);
                 Ok(expr)
             },
-            Token::String(_)
+            Token::Array
+            | Token::String(_)
             | Token::Int(_) 
             | Token::Bool(_) => self.parse_literal(),
             _ => Err(format!("Unexpected token: {:?}", self.peek())),
@@ -272,6 +277,8 @@ impl<'a> LLParser<'a> {
             Token::LessEqual    => Operation::Lt,
             _ => return Err(format!("Expected comparison operator, found {:?}", self.peek())),
         };
+        self.advance();
+
         let rhs = self.parse_operand()?;
 
         Ok(ASTNode::binary_op(op, lhs, rhs))
@@ -357,16 +364,24 @@ impl<'a> LLParser<'a> {
     /// Literal ::= Int | String | Bool | Array
     pub fn parse_literal(&mut self) -> Result<ASTNode, String> {
         let result = match self.peek() {
-            Token::Array         => self.parse_array(),
-            Token::Int(value)    => Ok(ASTNode::numeric(*value)),
-            Token::String(value) => Ok(ASTNode::string(value)),
-            Token::Bool(value)   => Ok(ASTNode::boolean(*value)),
+            Token::Int(value) => {
+                let result = ASTNode::numeric(*value);
+                self.advance();
+                Ok(result)
+            }
+            Token::String(value) => {
+                let result = ASTNode::string(value);
+                self.advance();
+                Ok(result)
+            }
+            Token::Bool(value) => {
+                let result = ASTNode::boolean(*value);
+                self.advance();
+                Ok(result)
+            }
+            Token::Array => self.parse_array(),
             _ => Err(format!("Expected literal, found {:?}", self.peek())),
         };
-
-        if result.is_ok() {
-            self.advance();
-        }
 
         result
     }
@@ -387,6 +402,7 @@ impl<'a> LLParser<'a> {
 #[cfg(test)]
 mod test_expressions {
     use super::*;
+    use crate::mock::MockStream;
     use whisp_lexer::token::Token;
 
     #[test]
@@ -396,14 +412,15 @@ mod test_expressions {
         // Mock declartion of 'x' variable.
         symbols.define("x".to_string(), SymbolInfo);
 
-        let mut parser = LLParser::new(vec![
-                Token::Identifier("x".into()),
-                Token::Assign,
-                Token::Int(42),
-                Token::Semicolon,
-            ],
-            &mut symbols
-        );
+        let tokens = vec![
+            Token::Identifier("x".into()),
+            Token::Assign,
+            Token::Int(42),
+            Token::Semicolon,
+        ];
+        let stream = MockStream::new(tokens);
+
+        let mut parser = LLParser::new(stream, &mut symbols);
 
         let result = parser.parse_assignment_expr();
 
@@ -420,17 +437,19 @@ mod test_expressions {
 
     #[test]
     fn test_parse_arithmetic_expr() {
+        let tokens = vec![
+            Token::Int(5),
+            Token::Add,
+            Token::Int(3),
+            Token::Mul,
+            Token::Int(2),
+            Token::Semicolon,
+        ];
+        let stream = MockStream::new(tokens);
+
         let mut symbols = SymbolTable::new();
-        let mut parser = LLParser::new(vec![
-                Token::Int(5),
-                Token::Add,
-                Token::Int(3),
-                Token::Mul,
-                Token::Int(2),
-                Token::Semicolon,
-            ],
-            &mut symbols
-        );
+        let mut parser = LLParser::new(stream, &mut symbols);
+
         let result = parser.parse_expression();
 
         match result {
@@ -451,12 +470,14 @@ mod test_expressions {
 
     #[test]
     fn test_parse_identifier() {
+        let tokens = vec![
+            Token::Identifier("y".into())
+        ];
+        let stream = MockStream::new(tokens);
+
         let mut symbols = SymbolTable::new();
-        let mut parser = LLParser::new(vec![
-                Token::Identifier("y".into())
-            ], 
-            &mut symbols
-        );
+        let mut parser = LLParser::new(stream, &mut symbols);
+
         let ast = parser.parse_identifier().unwrap();
 
         assert_eq!(ast, ASTNode::identifier("y"));
@@ -464,20 +485,21 @@ mod test_expressions {
 
     #[test]
     fn test_parse_literal() {
-        let mut symbols = SymbolTable::new();
-        let mut parser = LLParser::new(vec![
-                Token::Int(10),
-                Token::String("hello".into()),
-                Token::Bool(true),
-                Token::Array,
-                Token::LBracket,
-                Token::Int(1),
-                Token::Comma,
-                Token::Int(2),
+        let tokens = vec![
+            Token::Int(10),
+            Token::String("hello".into()),
+            Token::Bool(true),
+            Token::Array,
+            Token::LBracket,
+            Token::Int(1),
+            Token::Comma,
+            Token::Int(2),
                 Token::RBracket
-            ],
-            &mut symbols
-        );
+        ]; 
+        let stream = MockStream::new(tokens);
+
+        let mut symbols = SymbolTable::new();
+        let mut parser = LLParser::new(stream, &mut symbols);
 
         let int_ast = parser.parse_literal().unwrap();
         assert_eq!(int_ast, ASTNode::numeric(10));
