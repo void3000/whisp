@@ -76,6 +76,19 @@ impl<'a> TokenIterator for Stream<'a> {
                     Token::LessThan
                 }
             },
+            Some('"') => {
+                let mut string_lit = String::new();
+
+                while let Some(&next) = self.chars.peek() {
+                    self.chars.next();
+                    match next {
+                        '"' => break,
+                        other => string_lit.push(other),
+                    }
+                }
+
+                Token::String(string_lit)
+            },
             None => Token::Eof,
             Some(c) => {
                 // Numeric
