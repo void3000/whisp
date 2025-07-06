@@ -20,13 +20,13 @@ where
             return Err("Expected function name identifier after 'def'".to_string());
         };
 
+        self.symbols.define(name.clone(), SymbolInfo);
+
         self.expect(Token::LParen)?;
         let params = self.parse_params()?;
         self.expect(Token::RParen)?;
 
         let body = self.parse_block()?;
-
-        self.symbols.define(name.clone(), SymbolInfo);
 
         Ok(ASTNode::function_def(identifier, params, body))
     }

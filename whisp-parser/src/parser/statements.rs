@@ -41,7 +41,7 @@ where
                         return Err(format!("undeclared variable '{}'.", name));
                     }
                 }
-                self.expect(Token::Semicolon);
+                self.expect(Token::Semicolon)?;
 
                 Ok(expr)
             }
