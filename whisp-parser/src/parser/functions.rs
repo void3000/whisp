@@ -12,7 +12,7 @@ where
 {
     /// Function ::= 'def' Identifier '(' Params ')' Block
     pub fn parse_function_def(&mut self) -> Result<ASTNode, String> {
-        self.expect(Token::Def);
+        self.expect(Token::Def)?;
 
         let identifier = self.parse_identifier()?;
         let ASTNode::Identifier { ref name } = identifier 
@@ -20,9 +20,9 @@ where
             return Err("Expected function name identifier after 'def'".to_string());
         };
 
-        self.expect(Token::LParen);
+        self.expect(Token::LParen)?;
         let params = self.parse_params()?;
-        self.expect(Token::RParen);
+        self.expect(Token::RParen)?;
 
         let body = self.parse_block()?;
 
@@ -43,9 +43,9 @@ where
             return Err(format!("Undefined function name found '{}'", name));
         }
 
-        self.expect(Token::LParen);
+        self.expect(Token::LParen)?;
         let args = self.parse_args()?;
-        self.expect(Token::RParen);
+        self.expect(Token::RParen)?;
 
         Ok(ASTNode::call(identifier, args))
     }

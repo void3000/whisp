@@ -7,7 +7,7 @@ use crate::symbol::SymbolTable;
 pub trait Parser {
     fn peek(&self) -> &Token;
     fn lookahead(&self) -> &Token;
-    fn expect(&mut self, expected: Token);
+    fn expect(&mut self, expected: Token) -> Result<(), String>;
     fn advance(&mut self);
     fn parse(&mut self) -> Result<ASTNode, String>;
 }
@@ -71,15 +71,12 @@ where
         self.shift();
     }
 
-    fn expect(&mut self, expected: Token) {
+    fn expect(&mut self, expected: Token) -> Result<(), String> {
         if *self.peek() == expected {
             self.advance();
+            Ok(())
         } else {
-            panic!(
-                "Expected {:?}, but found {:?}",
-                expected,
-                self.peek()
-            );
+            Err(format!("expected {:#?}, but found {:#?}", expected, self.peek()))
         }
     }
 

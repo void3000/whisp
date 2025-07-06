@@ -50,17 +50,17 @@ where
 
     /// LetBinding ::= 'let' Identifier '=' Expr ';'
     pub fn parse_letbinding(&mut self) -> Result<ASTNode, String> {
-        self.expect(Token::Let);
+        self.expect(Token::Let)?;
 
         let identifier = self.parse_identifier()?;
         let ASTNode::Identifier { name } = &identifier else {
             return Err("Expected identifier after 'let'".to_string());
         };
-        self.expect(Token::Assign);
+        self.expect(Token::Assign)?;
 
         let body = self.parse_expression()?;
 
-        self.expect(Token::Semicolon);
+        self.expect(Token::Semicolon)?;
         self.symbols.define(name.clone(), SymbolInfo);
 
         Ok(ASTNode::let_binding(identifier, body))
@@ -69,11 +69,11 @@ where
     /// Block ::= '{' Stmts '}'
     pub fn parse_block(&mut self) -> Result<ASTNode, String> {
         self.symbols.enter_scope();
-        self.expect(Token::LBrace);
+        self.expect(Token::LBrace)?;
 
         let stmts = self.parse_statements()?;
 
-        self.expect(Token::RBrace);
+        self.expect(Token::RBrace)?;
         self.symbols.exit_scope();
 
         Ok(stmts)

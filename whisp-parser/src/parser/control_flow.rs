@@ -23,16 +23,16 @@ where
 
     /// Return ::= 'return' Expr ';'
     pub fn parse_return(&mut self) -> Result<ASTNode, String> {
-        self.expect(Token::Return);
+        self.expect(Token::Return)?;
         let expr = self.parse_expression()?;
-        self.expect(Token::Semicolon);
+        self.expect(Token::Semicolon)?;
 
         Ok(ASTNode::return_stmt(expr))
     }
 
     /// IfStatement ::= 'if' BoolExpr Block IfStatementTail
     pub fn parse_ifstatement(&mut self) -> Result<ASTNode, String> {
-        self.expect(Token::If);
+        self.expect(Token::If)?;
         let cond = self.parse_bool_expr()?;
         let then_branch = self.parse_block()?;
         let else_branch = self.parse_ifstatement_trail()?;
@@ -45,7 +45,7 @@ where
     pub fn parse_ifstatement_trail(&mut self) -> Result<Option<ASTNode>, String> {
         match self.peek() {
             Token::Elif => {
-                self.expect(Token::Elif);
+                self.expect(Token::Elif)?;
                 let cond = self.parse_bool_expr()?;
                 let then_branch = self.parse_block()?;
                 let else_branch = self.parse_ifstatement_trail()?;
@@ -63,7 +63,7 @@ where
 
     /// WhileStatement ::= 'while' BoolExpr Block
     pub fn parse_whilestatement(&mut self) -> Result<ASTNode, String> {
-        self.expect(Token::While);
+        self.expect(Token::While)?;
         let cond = self.parse_bool_expr()?;
         let body = self.parse_block()?;
 
@@ -72,7 +72,7 @@ where
 
     /// ForStatement ::= 'for' Identifier 'in' Array Block
     pub fn parse_forstatement(&mut self) -> Result<ASTNode, String> {
-        self.expect(Token::For);
+        self.expect(Token::For)?;
 
         let var = self.parse_identifier()?;
         if let ASTNode::Identifier { ref name } = var {
@@ -81,7 +81,7 @@ where
             return Err("Expected identifier after 'for'".to_string());
         }
 
-        self.expect(Token::In);
+        self.expect(Token::In)?;
 
         let itr = match self.peek() {
             Token::Array => self.parse_array()?,
