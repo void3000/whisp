@@ -183,7 +183,7 @@ where
             Token::LParen => {
                 self.advance();
                 let expr = self.parse_expression()?;
-                self.expect(Token::RParen);
+                self.expect(Token::RParen)?;
                 Ok(expr)
             },
             Token::Array
@@ -249,7 +249,7 @@ where
             Token::LParen => {
                 self.advance();
                 let expr = self.parse_bool_expr()?;
-                self.expect(Token::RParen);
+                self.expect(Token::RParen)?;
                 Ok(expr)
             },
             Token::Identifier( _ ) => {
@@ -305,7 +305,7 @@ where
     /// ArrayIndex ::= Identifier '[' (Int | Identifier) ']'
     pub fn parse_array_index(&mut self) -> Result<ASTNode, String> {
         let identifier = self.parse_identifier()?;
-        self.expect(Token::LBracket);
+        self.expect(Token::LBracket)?;
 
         let result = match self.peek() {
             Token::Int(index) => 
@@ -325,11 +325,11 @@ where
 
     /// Array ::= 'array' '[' ArrayElements ']'
     pub fn parse_array(&mut self) -> Result<ASTNode, String> {
-        self.expect(Token::Array);
-        self.expect(Token::LBracket);
+        self.expect(Token::Array)?;
+        self.expect(Token::LBracket)?;
 
         let elements = self.parse_array_elements()?;
-        self.expect(Token::RBracket);
+        self.expect(Token::RBracket)?;
 
         Ok(ASTNode::array(elements))
     }

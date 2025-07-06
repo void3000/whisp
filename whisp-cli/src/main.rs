@@ -48,7 +48,7 @@ fn main() -> Result<()> {
     let mut buffer = String::new();
 
     loop {
-        let prompt = if buffer.is_empty() { ">> " } else { ".. " };
+        let prompt = if buffer.is_empty() { ">>> " } else { ".. " };
         let readline = editor.readline(prompt);
 
         match readline {
