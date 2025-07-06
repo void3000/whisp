@@ -8,9 +8,7 @@
 
 ## 🌀 Whisp Language Demo
 
-![Demo](/whisp-doc/demo/demo1.gif)
-
-This shows how to define and call a function in Whisp.
+![Demo](/whisp-doc/demo/demo2.gif)
 
 ## License
 

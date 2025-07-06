@@ -83,6 +83,22 @@ impl<'a> TokenIterator for Stream<'a> {
                     self.chars.next();
                     match next {
                         '"' => break,
+                        '\\' => {
+                            if let Some(&escaped) = self.chars.peek() {
+                                self.chars.next();
+                                match escaped {
+                                    'n' => string_lit.push('\n'),
+                                    't' => string_lit.push('\t'),
+                                    '"' => string_lit.push('"'),
+                                    '\\' => string_lit.push('\\'),
+                                    other => {
+                                        return Err(format!("Invalid escape character: \\{}", other));
+                                    }
+                                }
+                            } else {
+                                return Err("Unterminated escape sequence.".to_string());
+                            }
+                        }
                         other => string_lit.push(other),
                     }
                 }

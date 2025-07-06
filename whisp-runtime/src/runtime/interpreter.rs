@@ -443,7 +443,7 @@ mod test_interpreter {
         assert!(result.is_err());
 
         let err = result.unwrap_err();
-        assert!(err.contains("Undeclared variable 'w' referenced."));
+        assert!(err.contains("undeclared variable 'w' referenced."));
     }
 
     #[test]
