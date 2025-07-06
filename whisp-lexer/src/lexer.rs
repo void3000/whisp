@@ -121,6 +121,8 @@ impl<'a> TokenIterator for Stream<'a> {
                         "def"       => Token::Def,
                         "return"    => Token::Return,
                         "array"     => Token::Array,
+                        "and"       => Token::And,
+                        "or"        => Token::Or,
                         "true"      => Token::Bool(true),
                         "false"     => Token::Bool(false),
                         _           => Token::Identifier(ident),
