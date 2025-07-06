@@ -73,9 +73,32 @@ where
     /// ForStatement ::= 'for' Identifier 'in' Array Block
     pub fn parse_forstatement(&mut self) -> Result<ASTNode, String> {
         self.expect(Token::For);
+
         let var = self.parse_identifier()?;
+        if let ASTNode::Identifier { ref name } = var {
+            self.symbols.define(name.clone(), SymbolInfo);
+        } else {
+            return Err("Expected identifier after 'for'".to_string());
+        }
+
         self.expect(Token::In);
-        let itr = self.parse_array()?;
+
+        let itr = match self.peek() {
+            Token::Array => self.parse_array()?,
+            Token::Identifier(_) => {
+            let ident = self.parse_identifier()?;
+
+            if let ASTNode::Identifier { ref name } = ident {
+                if None == self.symbols.resolve(name) {
+                    return Err(format!("Undefined variable '{}' used as iterator", name));
+                }
+            }
+
+            ident
+        }
+            other => return Err(format!("Expected array or identifier after 'in', found {:?}", other)),
+        };
+
         let body = self.parse_block()?;
 
         Ok(ASTNode::for_loop(var, itr, body))

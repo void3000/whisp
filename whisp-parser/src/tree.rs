@@ -123,8 +123,8 @@ impl ASTNode {
     }
 
     pub fn for_loop(
-        itr: ASTNode,
         var: ASTNode,
+        itr: ASTNode,
         body: ASTNode
     ) -> Self {
         ASTNode::ForLoop {

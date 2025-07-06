@@ -231,7 +231,6 @@ impl<'a> Evaluator for Interpreter<'a> {
         };
 
         self.env.enter_scope();
-
         for item in elements {
             self.env.put(name.clone(), item);
             eval(self, body)?;
@@ -243,8 +242,8 @@ impl<'a> Evaluator for Interpreter<'a> {
 
     fn eval_ifstatement(&mut self, node: &ASTNode) -> Result<Value, String> {
         let ASTNode::IfStatement { 
-            cond, 
-            then_branch, 
+            cond,
+            then_branch,
             else_branch 
         } = node 
         else {
@@ -513,12 +512,12 @@ mod test_interpreter {
                 ASTNode::numeric(0)
             ),
             ASTNode::for_loop(
+                ASTNode::identifier("num".to_string()),
                 ASTNode::array(vec![
                     ASTNode::numeric(1),
                     ASTNode::numeric(2),
                     ASTNode::numeric(3),
                 ]),
-                ASTNode::identifier("num".to_string()),
                 ASTNode::assign(
                     ASTNode::identifier("sum".to_string()),
                     ASTNode::binary_op(
