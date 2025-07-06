@@ -78,6 +78,6 @@ impl Environment {
             }
         }
         
-        Err(format!("Undeclared variable '{}' referenced.", name))
+        Err(format!("undeclared variable '{}' referenced.", name))
     }
 }

@@ -24,7 +24,7 @@ where
 
             if let ASTNode::Identifier { ref name } = identifier {
                 if self.symbols.resolve(name).is_none() {
-                    return Err(format!("Undeclared variable '{}'.", name));
+                    return Err(format!("undeclared variable '{}'.", name));
                 }
             }
 
