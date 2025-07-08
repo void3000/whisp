@@ -1,0 +1,48 @@
+@startuml
+title Module Import System Class Diagram
+
+' === Core Classes ===
+class ModuleSys {
+  +modules: List<ModuleObject>
+  +import_module(name: str): ModuleObject
+}
+
+class ModuleObject {
+  +name: str
+  +spec: ModuleSpec
+  +loader: ModuleLoader
+  +metadata: Metadata
+  +scope: HashMap<str, Value>
+}
+
+class ModuleSpec {
+  +name: str
+  +loader: ModuleLoader
+  +module_search_locations: Optional<List<str>>
+}
+
+interface ModuleFinder <<interface>> {
+  +find_module(fullname: str): Optional<ModuleSpec>
+}
+
+interface ModuleLoader <<interface>> {
+  +create_module(spec: ModuleSpec): ModuleObject
+  +exec_module(module: ModuleObject): OK
+}
+
+class BuiltinImporter {
+  +find_module(...)
+  +create_module(...)
+  +exec_module(...)
+}
+
+' === Relationships ===
+ModuleFinder <|-- BuiltinImporter
+ModuleLoader <|-- BuiltinImporter
+
+ModuleSpec --> ModuleLoader
+ModuleObject --> ModuleLoader
+ModuleObject --> ModuleSpec
+ModuleSys --> ModuleObject
+
+@enduml
