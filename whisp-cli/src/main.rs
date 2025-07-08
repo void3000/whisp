@@ -66,7 +66,7 @@ fn main() -> Result<()> {
                         let mut parser = LLParser::new(stream, &mut symbols);
                         match parser.parse() {
                             Ok(ast) => {
-                                match evaluator::eval(&mut interpreter, &ast) {
+                                match evaluator::evaluate_whisp_ast(&mut interpreter, &ast) {
                                     Ok(val) => println!("{}", val.to_string()),
                                     Err(err) => eprintln!("error: {}", err),
                                 }

@@ -445,3 +445,50 @@ Visual representation of the grammar was generated with [DrawGrammar](https://ja
 ### Token Finite State Machine
 
 ![token-grammar](token-grammar.png)
+
+## Modules
+
+Sometmes when your code gets big enough, you'd want to break it into smaller 
+pieces of code that are manageable and reusable, which brings us to modules. So,
+Whisp needs a way to know how to handle registration and loading of modules just
+any interpreted or compiled language.
+
+
+```
+project_root/
+├── src/
+│   ├── folder1/
+│   │   ├── show.w
+│   │   ├── greet.w
+│   │   └── folder2/
+│   │       └── hello.w
+│   └── yelo.w
+```
+
+Syntax for importing modules
+
+```
+import yelo;
+import folder1::{ show, greet };
+import folder1::folder2::hello;
+```
+
+#### Whisp Module System Requirements
+
+Inspired by the Python module system, the Whisp module system should be able to:
+
+| Functionality          | Description                                             |
+| ---------------------- | ------------------------------------------------------- |
+| **Browse directories** | Discover valid `.w` files for possible imports          |
+| **Load a module**      | Parse and store the AST of a module file                |
+| **Register a module**  | Store it in a `ModuleRegistry` to avoid reloading       |
+| **Execute a module**   | Evaluate the module's top-level code and expose exports |
+
+
+#### Module System Workflow
+
+>Inspired by Python module system.
+
+![Module system sequence diagram](/whisp-doc/demo/module_sys_seq_uml.png)
+
+![Module system relation diagram](/whisp-doc/demo/module_sys_relation_uml.png)

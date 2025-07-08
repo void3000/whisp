@@ -1,0 +1,21 @@
+@startuml
+title Module Import System - Sequence Diagram
+
+actor Caller
+participant ModuleSys
+participant ModuleFinder
+participant ModuleLoader
+
+Caller -> ModuleSys : import foo
+ModuleSys -> ModuleFinder : find_module("foo")
+ModuleFinder --> ModuleSys : return ModuleSpec
+
+ModuleSys -> ModuleLoader : create_module(spec)
+ModuleLoader --> ModuleSys : return ModuleObject
+
+ModuleSys -> ModuleLoader : exec_module(module)
+ModuleLoader --> ModuleSys : OK
+
+ModuleSys --> Caller : return foo
+
+@enduml
