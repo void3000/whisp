@@ -27,7 +27,7 @@ pub trait Evaluator {
     fn eval_function_call(&mut self, node: &ASTNode) -> Result<Value, String>;
 }
 
-pub fn eval(
+pub fn evaluate_whisp_ast(
     evaluator: &mut dyn Evaluator,
     node: &ASTNode
 ) -> Result<Value, String> {

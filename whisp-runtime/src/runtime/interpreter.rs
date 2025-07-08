@@ -1,4 +1,4 @@
-use crate::runtime::evaluator::{ Evaluator, eval };
+use crate::runtime::evaluator::{ Evaluator, evaluate_whisp_ast };
 use crate::environment::Environment;
 use crate::value::{ Value };
 
@@ -21,7 +21,7 @@ impl<'a> Interpreter<'a> {
     /// let interpreter = Interpreter::new(&mut env);
     /// let ast = ASTNode::Str { value: "hello".into() };
     ///
-    /// eval(&interpreter, &ast);
+    /// evaluate_whisp_ast(&interpreter, &ast);
     /// ```
     pub fn new(env: &'a mut Environment) -> Self {
         Interpreter { env }
@@ -64,7 +64,7 @@ impl<'a> Evaluator for Interpreter<'a> {
         let mut values = Vec::new();
         
         for elem in elements {
-            let value = eval(self, elem)?;
+            let value = evaluate_whisp_ast(self, elem)?;
             values.push(value);
         }
         
@@ -80,8 +80,8 @@ impl<'a> Evaluator for Interpreter<'a> {
             return Err("Expected a valid array index operation.".to_string());
         };
 
-        let arr_eval = eval(self, arr)?;
-        let index_eval = eval(self, index)?;
+        let arr_eval = evaluate_whisp_ast(self, arr)?;
+        let index_eval = evaluate_whisp_ast(self, index)?;
         
         match (arr_eval, index_eval) {
             (Value::Array(arr), Value::Int(idx)) => {
@@ -112,8 +112,8 @@ impl<'a> Evaluator for Interpreter<'a> {
         lhs: &ASTNode,
         rhs: &ASTNode,
     ) -> Result<Value, String> {
-        let lhs_val = eval(self, lhs)?;
-        let rhs_val = eval(self, rhs)?;
+        let lhs_val = evaluate_whisp_ast(self, lhs)?;
+        let rhs_val = evaluate_whisp_ast(self, rhs)?;
 
         let result = match op {
             Operation::Add => lhs_val.add(rhs_val),
@@ -146,7 +146,7 @@ impl<'a> Evaluator for Interpreter<'a> {
             return Err("Expected a valid identifier for variable binding.".to_string());
         };
     
-        let eval_value = eval(self, body)?;
+        let eval_value = evaluate_whisp_ast(self, body)?;
         self.env.put(name.clone(), eval_value);
 
         Ok(Value::Void(()))
@@ -166,7 +166,7 @@ impl<'a> Evaluator for Interpreter<'a> {
             return Err("Expected a valid identifier for assignment.".to_string());
         };
 
-        let eval_value = eval(self, body)?;
+        let eval_value = evaluate_whisp_ast(self, body)?;
         let result = self.env.update(&name.clone(), eval_value);
         
         match result {
@@ -183,7 +183,7 @@ impl<'a> Evaluator for Interpreter<'a> {
         let mut last_value = Value::Void(());
 
         for stmt in stmts {
-            last_value = eval(self, stmt)?;
+            last_value = evaluate_whisp_ast(self, stmt)?;
         }
 
         Ok(last_value)
@@ -201,8 +201,8 @@ impl<'a> Evaluator for Interpreter<'a> {
         
         self.env.enter_scope();
 
-        while matches!(eval(self, cond)?, Value::Bool(true)) {
-            eval(self, body)?;
+        while matches!(evaluate_whisp_ast(self, cond)?, Value::Bool(true)) {
+            evaluate_whisp_ast(self, body)?;
         }
         self.env.exit_scope();
     
@@ -219,7 +219,7 @@ impl<'a> Evaluator for Interpreter<'a> {
             return Err("Expected a valid for-loop.".to_string());
         };
 
-        let iterable = eval(self, itr)?;
+        let iterable = evaluate_whisp_ast(self, itr)?;
         let Value::Array(elements) = iterable 
         else {
             return Err("Expected an iterable for the for-loop.".to_string());
@@ -233,7 +233,7 @@ impl<'a> Evaluator for Interpreter<'a> {
         self.env.enter_scope();
         for item in elements {
             self.env.put(name.clone(), item);
-            eval(self, body)?;
+            evaluate_whisp_ast(self, body)?;
         }
         self.env.exit_scope();
 
@@ -250,17 +250,17 @@ impl<'a> Evaluator for Interpreter<'a> {
             return Err("Expected a valid if statement.".to_string());
         };
 
-        match eval(self, cond)? {
+        match evaluate_whisp_ast(self, cond)? {
             Value::Bool(true) => {
                 self.env.enter_scope();
-                let result = eval(self, then_branch);
+                let result = evaluate_whisp_ast(self, then_branch);
                 self.env.exit_scope();
                 result
             },
             Value::Bool(false) => {
                 if let Some(else_branch) = else_branch {
                     self.env.enter_scope();
-                    let result = eval(self, else_branch);
+                    let result = evaluate_whisp_ast(self, else_branch);
                     self.env.exit_scope();
                     result
                 } else {
@@ -302,7 +302,7 @@ impl<'a> Evaluator for Interpreter<'a> {
     fn eval_return(&mut self, node: &ASTNode) -> Result<Value, String> {
         match node {
             ASTNode::Return { value } => {
-                let eval_value = eval(self, value)?;
+                let eval_value = evaluate_whisp_ast(self, value)?;
                 Ok(Value::Return(Box::new(eval_value)))
             },
             _ => Err("Expected a valid return statement.".to_string())
@@ -317,10 +317,10 @@ impl<'a> Evaluator for Interpreter<'a> {
         else {
             return Err("Expected a valid function call.".to_string());
         };
-        let eval_fun = eval(self, name)?;
+        let eval_fun = evaluate_whisp_ast(self, name)?;
         let eval_args: Vec<Value> = args
                 .iter()
-                .map(|arg| eval(self, arg).unwrap())
+                .map(|arg| evaluate_whisp_ast(self, arg).unwrap())
                 .collect();
 
         match eval_fun {
@@ -341,7 +341,7 @@ impl<'a> Evaluator for Interpreter<'a> {
                     self.env.put(name.clone(), arg_val);
                 }
 
-                let result = eval(self, &body)?;
+                let result = evaluate_whisp_ast(self, &body)?;
 
                 self.env.exit_scope();
                 match result {
@@ -369,7 +369,7 @@ mod test_interpreter {
         let mut env = Environment::new();
         let mut interpreter = Interpreter::new(&mut env);
         let ast = ASTNode::numeric(7);
-        let result = eval(&mut interpreter, &ast);
+        let result = evaluate_whisp_ast(&mut interpreter, &ast);
 
         assert!(result.is_ok());
         match result {
@@ -390,7 +390,7 @@ mod test_interpreter {
             ]),
             ASTNode::numeric(1)
         );
-        let result = eval(&mut interpreter, &ast);
+        let result = evaluate_whisp_ast(&mut interpreter, &ast);
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Int(2));
@@ -408,7 +408,7 @@ mod test_interpreter {
             ]),
             ASTNode::numeric(4)
         );
-        let result = eval(&mut interpreter, &ast);
+        let result = evaluate_whisp_ast(&mut interpreter, &ast);
 
         assert!(result.is_err());
 
@@ -424,7 +424,7 @@ mod test_interpreter {
             ASTNode::identifier("x".to_string()),
             ASTNode::numeric(42)
         );
-        let result = eval(&mut interpreter, &ast);
+        let result = evaluate_whisp_ast(&mut interpreter, &ast);
 
         assert!(result.is_ok());
         assert_eq!(env.get("x"), Some(Value::Int(42)));
@@ -438,7 +438,7 @@ mod test_interpreter {
             ASTNode::identifier("w".to_string()),
             ASTNode::numeric(42)
         );
-        let result = eval(&mut interpreter, &ast);
+        let result = evaluate_whisp_ast(&mut interpreter, &ast);
 
         assert!(result.is_err());
 
@@ -465,7 +465,7 @@ mod test_interpreter {
                 ASTNode::identifier("b".to_string())
             ),
         ]);
-        let result = eval(&mut interpreter, &ast);
+        let result = evaluate_whisp_ast(&mut interpreter, &ast);
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Int(30));
@@ -497,7 +497,7 @@ mod test_interpreter {
             ),
         ]);
     
-        let result = eval(&mut interpreter, &ast);
+        let result = evaluate_whisp_ast(&mut interpreter, &ast);
         assert!(result.is_ok());
         assert_eq!(env.get("x"), Some(Value::Int(3)));
     }
@@ -529,7 +529,7 @@ mod test_interpreter {
             ),
         ]);
 
-        let result = eval(&mut interpreter, &ast);
+        let result = evaluate_whisp_ast(&mut interpreter, &ast);
 
         assert!(result.is_ok());
         assert_eq!(env.get("sum"), Some(Value::Int(6)));
@@ -561,7 +561,7 @@ mod test_interpreter {
             )
         ]);
 
-        let result = eval(&mut interpreter, &ast);
+        let result = evaluate_whisp_ast(&mut interpreter, &ast);
     
         assert!(result.is_ok());
         assert_eq!(env.get("x"), Some(Value::Int(7)));
@@ -589,7 +589,7 @@ mod test_interpreter {
             )
         ]);
 
-        let result = eval(&mut interpreter, &ast);
+        let result = evaluate_whisp_ast(&mut interpreter, &ast);
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Str("Hello world!".to_string()));
@@ -625,7 +625,7 @@ mod test_interpreter {
             ASTNode::identifier("y".to_string())
         ]);
 
-        let result = eval(&mut interpreter, &ast);
+        let result = evaluate_whisp_ast(&mut interpreter, &ast);
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Int(10));
