@@ -4,30 +4,30 @@ use whisp_parser::tree::ASTNode;
 use whisp_parser::ops::Operation;
 
 pub trait Evaluator {
-    fn eval_str(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_numeric(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_boolean(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_array(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_array_index(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_identifier(&mut self, node: &ASTNode) -> Result<Value, String>;
+    fn eval_str(&mut self, node: &ASTNode)          -> Result<Value, String>;
+    fn eval_numeric(&mut self, node: &ASTNode)      -> Result<Value, String>;
+    fn eval_boolean(&mut self, node: &ASTNode)      -> Result<Value, String>;
+    fn eval_array(&mut self, node: &ASTNode)        -> Result<Value, String>;
+    fn eval_array_index(&mut self, node: &ASTNode)  -> Result<Value, String>;
+    fn eval_identifier(&mut self, node: &ASTNode)   -> Result<Value, String>;
+    fn eval_letbinding(&mut self, node: &ASTNode)   -> Result<Value, String>;
+    fn eval_assgin(&mut self, node: &ASTNode)       -> Result<Value, String>;
+    fn eval_statements(&mut self, node: &ASTNode)   -> Result<Value, String>;
+    fn eval_ifstatement(&mut self, node: &ASTNode)  -> Result<Value, String>;
+    fn eval_whileloop(&mut self, node: &ASTNode)    -> Result<Value, String>;
+    fn eval_forloop(&mut self, node: &ASTNode)      -> Result<Value, String>;
+    fn eval_function_def(&mut self, node: &ASTNode) -> Result<Value, String>;
+    fn eval_return(&mut self, node: &ASTNode)       -> Result<Value, String>;
+    fn eval_function_call(&mut self, node: &ASTNode)-> Result<Value, String>;
     fn eval_binary_op(
         &mut self,
         op: &Operation,
         lhs: &ASTNode,
         rhs: &ASTNode,
     ) -> Result<Value, String>;
-    fn eval_letbinding(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_assgin(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_statements(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_ifstatement(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_whileloop(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_forloop(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_function_def(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_return(&mut self, node: &ASTNode) -> Result<Value, String>;
-    fn eval_function_call(&mut self, node: &ASTNode) -> Result<Value, String>;
 }
 
-pub fn evaluate_whisp_ast(
+pub fn eval(
     evaluator: &mut dyn Evaluator,
     node: &ASTNode
 ) -> Result<Value, String> {

@@ -1,0 +1,13 @@
+[package]
+name = "whisp"
+version = "0.1.0"
+edition.workspace = true 
+
+[lib]
+name = "whisp"
+path = "src/lib.rs"
+
+[dependencies]
+whisp_lexer = { version = "0.1.0" }
+whisp_parser = { version = "0.1.0" }
+whisp_runtime = { version = "0.1.0" }

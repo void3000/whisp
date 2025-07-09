@@ -8,8 +8,6 @@ name = "whisp_cli"
 path = "src/main.rs"
 
 [dependencies]
-whisp_lexer = { version = "0.1.0" }
-whisp_parser = { version = "0.1.0" }
-whisp_runtime = { version = "0.1.0" }
+whisp = { version = "0.1.0" }
 
 rustyline = "11"
