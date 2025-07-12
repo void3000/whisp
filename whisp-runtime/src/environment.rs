@@ -1,41 +1,48 @@
 use std::collections::HashMap;
 use crate::value::Value;
 
+#[derive(Clone)]
 pub struct Environment {
-    /// Define lexical scope stack to handle nested blocks or function calls. 
-    /// Each new scope represents a new block (e.g. function body, loop body).
+    /// Represents the environment for variable bindings in Whisp.
     ///
-    /// Lexical Scoping
+    /// This structure implements **lexical scoping** via a stack of scopes,
+    /// where each scope is represented by a `HashMap<String, Value>`. New
+    /// scopes are pushed onto the stack during function calls or blocks, and
+    /// popped afterward.
     ///
-    /// In lexical (static) scoping, a variable’s binding is determined by the
-    /// physical structure of the code — that is, by its position in the source
-    /// code. When a function is defined, the variables it can access are 
-    /// resolved based on its location in the code, regardless of where it's 
-    /// called from. Most modern languages (like Rust, Python, JavaScript) use 
-    /// lexical scoping.
+    /// ---
+    ///
+    /// ### Lexical Scoping
+    /// In lexical (or static) scoping, a variable’s binding is determined by the
+    /// physical structure of the code — that is, by its position in the source.
+    /// When a function is defined, the variables it can access are resolved based
+    /// on where the function is written, not where it is called.
+    ///
+    /// Most modern languages (like Rust, Python, JavaScript) use lexical scoping.
     ///
     /// Example:
-    /// 
     /// ```whisp
     /// let x = 1;
-    /// def foo() { let x = 3; println!("{}", x); } // Resolves `x` to 3
+    /// def foo() { let x = 3; println(x); }
+    /// foo(); // Resolves `x` to 3 inside `foo`
     /// ```
     ///
-    /// Dynamic Scoping
+    /// ---
     ///
-    /// In dynamic scoping, a variable’s binding depends on the call stack at 
-    /// runtime. When a function is called, it uses variables from the caller’s 
-    /// environment, even if those variables are not lexically visible. This 
-    /// behavior is mostly found in older or niche languages (like early Lisp 
-    /// or Bash).
+    /// ### Dynamic Scoping (Not the default in Whisp)
+    /// In dynamic scoping, a variable’s binding depends on the runtime call stack.
+    /// A function can see variables from the caller’s environment, even if they are
+    /// not lexically visible. This is typical of older languages (like early Lisp or Bash).
     ///
     /// Example:
-    ///
     /// ```whisp
     /// def foo() { print(x); }
     /// def bar() { let x = 2; foo(); }
-    /// bar(); // Under dynamic scoping, `foo` sees x = 2 from `bar`'s scope
+    /// bar(); // Under dynamic scoping, `foo` sees x = 2 from `bar`
     /// ```
+    ///
+    /// Although Whisp supports dynamic scoping for certain constructs, its primary
+    /// model is lexical.
     pub stack: Vec<HashMap<String, Value>>,
 }
 

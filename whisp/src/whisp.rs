@@ -1,9 +1,15 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use whisp_lexer::lexer::{Lexer, Collection};
+use whisp_lexer::lexer::{
+    Lexer, 
+    Collection
+};
 use whisp_parser::{
-    parser::ll_parser::{LLParser, Parser},
+    parser::ll_parser::{
+        LLParser, 
+        Parser
+    },
     symbol::SymbolTable,
     tree::ASTNode,
 };
