@@ -1,0 +1,27 @@
+{
+  "name": "whisp-syntax",
+  "displayName": "Whisp Syntax Highlighting",
+  "description": "Basic syntax highlighting for Whisp language",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.50.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "whisp",
+        "aliases": ["Whisp", "whisp"],
+        "extensions": [".w"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "whisp",
+        "scopeName": "source.whisp",
+        "path": "./syntaxes/whisp.tmLanguage.json"
+      }
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "scopeName": "source.whisp",
+  "patterns": [
+    {
+      "name": "keyword.control.whisp",
+      "match": "\\b(let|def|return|if|else|while|true|false)\\b"
+    },
+    {
+      "name": "comment.line.double-slash.whisp",
+      "begin": "//",
+      "beginCaptures": { "0": { "name": "punctuation.definition.comment.whisp" } },
+      "end": "$",
+      "name": "comment.line.whisp"
+    },
+    {
+      "name": "string.quoted.double.whisp",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.whisp",
+          "match": "\\\\."
+        }
+      ]
+    },
+    {
+      "name": "constant.numeric.whisp",
+      "match": "\\b\\d+\\b"
+    },
+    {
+      "name": "variable.other.whisp",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+    }
+  ],
+  "repository": {},
+  "name": "whisp",
+  "fileTypes": ["w"],
+  "uuid": "00000000-0000-0000-0000-000000000000"
+}
