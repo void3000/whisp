@@ -35,13 +35,12 @@ impl BuiltinImporter {
             .eval(&ast)
             .map_err(|err| format!("ModuleExecError: {}", err))?;
 
-        let env = self.whisp.env.borrow();
+        let mut env = self.whisp.env.borrow_mut();
         let mut scope = module.scope.borrow_mut();
 
-        env.stack.iter().for_each(|frame| {
-                scope.extend(frame.clone())
-            }
-        );
+        while let Some(frame) = env.stack.pop() {
+            scope.extend(frame);
+        }
 
         Ok(())
     }
