@@ -16,7 +16,7 @@ pub fn dispatch_command(whisp: &mut Whisp, command: &str) -> bool {
                         Ok(val) => println!("{}", val.to_string()),
                         Err(err) => eprintln!("error: {}", err),
                 },
-                Err(e) => eprintln!("Parse error: {}", e)
+                Err(e) => eprintln!("Error: {}", e)
             }
         }
     }
@@ -44,8 +44,4 @@ pub fn handle_license() {
 
 fn handle_credits() {
     println!("Whisp was developed by the Whisp Team.");
-}
-
-fn handle_exit() {
-    println!("Exiting Whisp...");
 }

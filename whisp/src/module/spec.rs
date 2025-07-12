@@ -1,27 +1,40 @@
 use crate::module::loader::ModuleLoader;
 use crate::module::object::ModuleObject;
 
+use std::path::PathBuf;
+
+/// A `ModuleSpec` describes the metadata and loader used to resolve and execute a module.
+///
+/// # Fields
+///
+/// - `name`: The module’s name.
+/// - `loader`: A boxed `ModuleLoader` trait object, enabling dynamic dispatch for custom
+///    loading strategies (e.g., file-based, in-memory, remote). This design allows:
+///   - Heterogeneous loader implementations in collections (like `Vec<ModuleSpec>`).
+///   - Cleaner architecture without pervasive generics.
+///   - Runtime flexibility and extensibility, important for supporting Whisp’s multiple
+///     import strategies.
+/// - `module_search_locations`: Optional locations where the loader can search for the module.
+///    Typically used by loaders like file-based importers.
+///
+/// # Design Note
+///
+/// While `Box<dyn ModuleLoader>` introduces some runtime cost due to dynamic dispatch, the
+/// tradeoff is worthwhile for:
+/// - Simpler system design
+/// - Better extensibility
+/// - Cleaner separation of concerns across module types
 pub struct ModuleSpec {
     pub name: String,
-    /// Use `Box<dyn ModuleLoader>` in `ModuleSpec` to enable dynamic dispatch 
-    /// for different types of module loaders (e.g., file-based, built-in, remote).
-    /// This design allows us to store various loader implementations behind a 
-    /// common interface without requiring generics throughout the system. It 
-    /// also enables us to collect different loaders in a single data structure,
-    /// such as a `Vec<ModuleSpec>`, which would be impossible with generics alone.
-    /// While using trait objects introduces a small runtime cost due to dynamic
-    /// dispatch, it simplifies the architecture, avoids excessive code duplication,
-    /// and makes the system more extensible — especially useful in a language like
-    /// Whisp that supports multiple import strategies.
     pub loader: Box<dyn ModuleLoader>,
-    pub module_search_locations: Option<Vec<String>>,
+    pub module_search_locations: Vec<PathBuf>,
 }
 
 impl ModuleSpec {
     pub fn new(
         name: String, 
         loader: Box<dyn ModuleLoader>, 
-        module_search_locations: Option<Vec<String>>
+        module_search_locations: Vec<PathBuf>
     ) -> Self {
         Self {
             name, 

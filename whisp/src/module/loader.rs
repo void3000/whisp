@@ -20,5 +20,5 @@ pub trait ModuleLoader {
 
     /// Executes the provided module by performing evaluation as needed. 
     /// Returns `Ok(())` on success or an error message.
-    fn exec_module(&self, module: Rc<ModuleObject>) -> Result<(), String>;
+    fn exec_module(&mut self, module: Rc<ModuleObject>) -> Result<(), String>;
 }
