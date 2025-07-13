@@ -280,7 +280,7 @@ AddSubExprTail    ::= ('+' | '-') MulDivExpr AddSubExprTail
                     | ε
 
 MulDivExpr        ::= PrimaryExpr MulDivExprTail
-MulDivExprTail    ::= ('*' | '/' | '%') PrimaryExpr MulDivExprTrail
+MulDivExprTail    ::= ('*' | '/' | '%') PrimaryExpr MulDivExprTail
                     | ε
 
 PrimaryExpr       ::= Literal
@@ -297,7 +297,7 @@ ControlFlow       ::= IfStatement
 BoolExpr          ::= BoolOrExpr
 
 BoolOrExpr        ::= BoolAndExpr BoolOrExprTail
-BoolOrExprTrail   ::= 'or' BoolAndExpr BoolOrExprTrail
+BoolOrExprTail   ::= 'or' BoolAndExpr BoolOrExprTail
                     | ε
 
 BoolAndExpr       ::= BoolTerm BoolAndExprTail
@@ -346,10 +346,10 @@ Function          ::= 'def' Identifier '(' Params ')' Block
 
 Call              ::= Identifier '(' Args ')'
 
-Params            ::= Identifier ParamsTrail
+Params            ::= Identifier ParamsTail
                     | ε
 
-ParamsTrail       ::= ',' Identifier ParamsTrail
+ParamsTail       ::= ',' Identifier ParamsTail
                     | ε
 
 Args              ::= ArgTerm ArgsTail
