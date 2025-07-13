@@ -26,8 +26,16 @@ where
         let params = self.parse_params()?;
         self.expect(Token::RParen)?;
 
+        self.symbols.enter_scope();
+        for param in &params {
+            match param {
+                ASTNode::Identifier { name } => self.symbols.define(name.clone(), SymbolInfo),
+                _ => return Err("Invalid parameter — expected identifier".to_string())
+            }
+        }
         let body = self.parse_block()?;
-
+        self.symbols.exit_scope();
+        
         Ok(ASTNode::function_def(identifier, params, body))
     }
 
