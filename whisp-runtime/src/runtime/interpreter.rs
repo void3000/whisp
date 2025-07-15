@@ -182,18 +182,17 @@ impl Evaluator for Interpreter {
             return Err("Expected a valid assignment operation.".to_string());
         };
 
-        let ASTNode::Identifier { name } = &**identifier 
-        else {
-            return Err("Expected a valid identifier for assignment.".to_string());
-        };
-
         let eval_value = eval(self, body)?;
-        let result = self.update(&name, eval_value);
-        
-        match result {
-            Ok( _ )  => Ok(Value::Void(())),
-            Err(err) => Err(err),
+
+        match identifier.as_ref() {
+            ASTNode::Identifier { name } => {
+                self.update(&name, eval_value);
+            }
+            ASTNode::ArrayIndex { .. } => { /* handle array case */ }
+            _ => return Err("Expected a valid identifier for assignment.".to_string()),
         }
+
+        Ok(Value::Void(()))
     }
 
     fn eval_statements(&mut self, node: &ASTNode) -> Result<Value, String> {
