@@ -10,35 +10,29 @@ impl<'a, T> LLParser<'a, T>
 where
     T: TokenIterator<Item = Token>,
 {
-    /// Expr ::= AssignmentExpr
+    /// Expr ::= AssignExpr
     pub fn parse_expression(&mut self) -> Result<ASTNode, String> {
-        self.parse_assignment_expr()
+        self.parse_assign_expr()
     }
 
-    /// AssignmentExpr ::= Identifier '=' Expr | ArithmeticExpr
-    pub fn parse_assignment_expr(&mut self) -> Result<ASTNode, String> {
-        if matches!(self.peek(), Token::Identifier(_)) &&
-           matches!(self.lookahead(), Token::Assign) 
-        {
-            let identifier = self.parse_identifier()?;
+    /// AssignExpr      ::= OrExpr AssignExprTail
+    /// AssignExprTail  ::= '=' Expr | ε
+    pub fn parse_assign_expr(&mut self) -> Result<ASTNode, String> {
+        let lhs = self.parse_or_expr()?;
 
-            if let ASTNode::Identifier { ref name } = identifier {
-                if self.symbols.resolve(name).is_none() {
-                    return Err(format!("undeclared variable '{}'.", name));
+        if matches!(self.peek(), Token::Assign) {
+            match &lhs {
+                  ASTNode::Identifier { .. } 
+                | ASTNode::ArrayIndex { .. } => {
+                    self.advance();
+                    let rhs = self.parse_expression()?;
+                    Ok(ASTNode::assign(lhs, rhs))
                 }
+                _ => Err("Invalid assignment target.".to_string()),
             }
-
-            self.advance();
-            let body = self.parse_expression()?;
-            return Ok(ASTNode::assign(identifier, body));
+        } else {
+            Ok(lhs)
         }
-
-        self.parse_arithmetic_expr()
-    }
-
-    /// ArithmeticExpr ::= OrExpr
-    pub fn parse_arithmetic_expr(&mut self) -> Result<ASTNode, String> {
-        self.parse_or_expr()
     }
 
     /// OrExpr ::= AndExpr OrExprTail

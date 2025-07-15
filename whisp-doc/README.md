@@ -256,12 +256,11 @@ Stmt              ::= Expr ';'
                     | Function
                     | Block
 
-Expr              ::= AssignmentExpr
+Expr              ::= AssignExpr
 
-AssignmentExpr    ::= Identifier '=' Expr
-                    | ArithmeticExpr
-
-ArithmeticExpr    ::= OrExpr
+AssignExpr        ::= OrExpr AssignExprTail
+AssignExprTail    ::= '=' Expr
+                    | ε
 
 OrExpr            ::= AndExpr OrExprTail
 OrExprTail        ::= 'or' AndExpr OrExprTail
