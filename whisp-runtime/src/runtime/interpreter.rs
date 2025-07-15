@@ -162,7 +162,7 @@ impl Evaluator for Interpreter {
         else {
             return Err("Expected a valid variable binding operation.".to_string());
         };
-        let ASTNode::Identifier { name } = &**identifier 
+        let ASTNode::Identifier { name } = identifier.as_ref() 
         else {
             return Err("Expected a valid identifier for variable binding.".to_string());
         };
@@ -188,7 +188,29 @@ impl Evaluator for Interpreter {
             ASTNode::Identifier { name } => {
                 self.update(&name, eval_value);
             }
-            ASTNode::ArrayIndex { .. } => { /* handle array case */ }
+            ASTNode::ArrayIndex { arr, index } => { 
+                let array_val = eval(self, arr)?;
+                let index_val = eval(self, index)?;
+
+                match (array_val, index_val) {
+                    (Value::Array(mut vec), Value::Int(i)) => {
+                        let i = i as usize;
+                        if i >= vec.len() {
+                            return Err("Index out of bounds".to_string());
+                        }
+
+                        vec[i] = eval_value;
+
+                        match arr.as_ref() {
+                            ASTNode::Identifier { name } => {
+                                self.update(name, Value::Array(vec))?;
+                            }
+                            _ => return Err("Only assignment to direct array variables is supported".to_string()),
+                        }
+                    }
+                    _ => return Err("Invalid array assignment".to_string()),
+                }
+            }
             _ => return Err("Expected a valid identifier for assignment.".to_string()),
         }
 
