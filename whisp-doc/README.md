@@ -306,6 +306,7 @@ BoolAndExprTail   ::= 'and' BoolTerm BoolAndExprTail
 BoolTerm          ::= Bool
                     | ComparisonExpr
                     | Identifier
+                    | ArrayIndex
                     | '(' BoolExpr ')'
 
 ComparisonExpr    ::= Operand ('==' | '>' | '<' | '>=' | '<=') Operand
