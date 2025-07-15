@@ -400,7 +400,7 @@ mod test_expressions {
     use whisp_lexer::token::Token;
 
     #[test]
-    fn test_parse_assignment_expr() {
+    fn test_parse_assign_expr() {
         let mut symbols = SymbolTable::new();
 
         // Mock declartion of 'x' variable.
@@ -416,7 +416,7 @@ mod test_expressions {
 
         let mut parser = LLParser::new(stream, &mut symbols);
 
-        let result = parser.parse_assignment_expr();
+        let result = parser.parse_assign_expr();
 
         match result {
             Ok(ast) => {
