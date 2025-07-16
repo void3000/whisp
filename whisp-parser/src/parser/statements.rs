@@ -23,7 +23,7 @@ where
         Ok(ASTNode::statements(stmts))
     }
 
-    /// Stmt ::= Expr ';' | LetBinding | FunctionDef | Block | ControlFlow
+    /// Stmt ::= Expr ';' | LetBinding | ControlFlow | Function | Block
     pub fn parse_statement(&mut self) -> Result<ASTNode, String> {
         match self.peek() {
             Token::If
@@ -46,6 +46,28 @@ where
                 Ok(expr)
             }
         }
+    }
+
+    /// Import         ::= 'import' ImportPath ';'
+    /// ImportPath     ::= Identifier ImportPathTail
+    /// ImportPathTail ::= '::' Identifier ImportPathTail | ε
+    pub fn parse_import(&mut self) -> Result<ASTNode, String> {
+        self.expect(Token::Import)?;
+
+        let mut path = Vec::new();
+
+        let ident = self.parse_identifier()?;
+        path.push(ident);
+
+        while matches!(self.peek(), Token::DoubleColon) {
+            self.advance();
+            let ident = self.parse_identifier()?;
+            path.push(ident);
+        }
+
+        self.expect(Token::Semicolon)?;
+
+        Ok(ASTNode::import(path))
     }
 
     /// LetBinding ::= 'let' Identifier '=' Expr ';'
@@ -159,5 +181,41 @@ mod test_statements {
             },
             _ => panic!("Expected valid statement."),
         }
+    }
+
+    #[test]
+    fn test_parse_import() {
+        let tokens = vec![
+            Token::Import,
+            Token::Identifier("path1".to_string()),
+            Token::DoubleColon,
+            Token::Identifier("path2".to_string()),
+            Token::DoubleColon,
+            Token::Identifier("sort".to_string()),
+            Token::Semicolon
+        ];
+        let stream = MockStream::new(tokens);
+
+        let mut symbols = SymbolTable::new();
+        let mut parser = LLParser::new(stream, &mut symbols);
+
+        let ast = parser.parse_import();
+
+        // Ok(
+        //     Import {
+        //         path: [
+        //             Identifier {
+        //                 name: "path1",
+        //             },
+        //             Identifier {
+        //                 name: "path2",
+        //             },
+        //             Identifier {
+        //                 name: "sort",
+        //             },
+        //         ],
+        //     },
+        // )
+        assert!(ast.is_ok());
     }
 }
