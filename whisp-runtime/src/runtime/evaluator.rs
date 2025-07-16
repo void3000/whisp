@@ -47,6 +47,7 @@ pub fn eval(
         ASTNode::IfStatement { .. } => evaluator.eval_ifstatement(node),
         ASTNode::FunctionDef { .. } => evaluator.eval_function_def(node),
         ASTNode::Return { .. }      => evaluator.eval_return(node),
-        ASTNode::Call { .. }        => evaluator.eval_function_call(node)
+        ASTNode::Call { .. }        => evaluator.eval_function_call(node),
+        _ => todo!()
     }
 }

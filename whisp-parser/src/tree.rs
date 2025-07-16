@@ -21,6 +21,9 @@ pub enum ASTNode {
         lhs: Box<ASTNode>,
         rhs: Box<ASTNode>
     },
+    Import {
+        path: Vec<ASTNode>
+    },
     Assign { 
         identifier: Box<ASTNode>, 
         body: Box<ASTNode> 
@@ -99,6 +102,10 @@ impl ASTNode {
             identifier: Box::new(identifier),
             body: Box::new(body),
         }
+    }
+
+    pub fn import(path: Vec<ASTNode>) -> Self {
+        ASTNode::Import { path: path }
     }
 
     pub fn let_binding(identifier: ASTNode, body: ASTNode) -> Self {

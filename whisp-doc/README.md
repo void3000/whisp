@@ -327,6 +327,11 @@ ArrayElementsTail ::= ',' Expr ArrayElementsTail
 
 ArrayIndex        ::= Identifier '[' (Int | Identifier) ']'
 
+Import            ::= 'import' ImportPath ';'
+ImportPath        ::= Identifier ImportPathTail
+ImportPathTail    ::= '::' Identifier ImportPathTail
+                    | ε
+
 LetBinding        ::= 'let' Identifier '=' Expr ';'
 
 IfStatement       ::= 'if' BoolExpr Block IfStatementTail
