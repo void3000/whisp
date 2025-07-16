@@ -186,7 +186,7 @@ impl Evaluator for Interpreter {
 
         match identifier.as_ref() {
             ASTNode::Identifier { name } => {
-                self.update(&name, eval_value);
+                self.update(&name, eval_value.clone())?;
             }
             ASTNode::ArrayIndex { arr, index } => { 
                 let array_val = eval(self, arr)?;
@@ -199,7 +199,7 @@ impl Evaluator for Interpreter {
                             return Err("Index out of bounds".to_string());
                         }
 
-                        vec[i] = eval_value;
+                        vec[i] = eval_value.clone();
 
                         match arr.as_ref() {
                             ASTNode::Identifier { name } => {
@@ -214,7 +214,7 @@ impl Evaluator for Interpreter {
             _ => return Err("Expected a valid identifier for assignment.".to_string()),
         }
 
-        Ok(Value::Void(()))
+        Ok(eval_value)
     }
 
     fn eval_statements(&mut self, node: &ASTNode) -> Result<Value, String> {
