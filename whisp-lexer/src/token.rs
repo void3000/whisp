@@ -11,6 +11,7 @@ pub enum Token {
     In,
     Def,
     Return,
+    Import,
 
     // Literals and Identifiers
     Identifier(String),
@@ -46,6 +47,7 @@ pub enum Token {
     RBracket,     // ]
     Comma,        // ,
     Semicolon,    // ;
+    DoubleColon,  // ::
 
     // End of file/input
     Eof

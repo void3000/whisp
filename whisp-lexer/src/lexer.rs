@@ -105,6 +105,12 @@ impl<'a> TokenIterator for Stream<'a> {
 
                 Token::String(string_lit)
             },
+            Some(':') => {
+                match self.chars.next() {
+                    Some(':') => Token::DoubleColon,
+                    _ => return Err("Unexpected single ':'.".to_string())
+                }
+            }
             None => Token::Eof,
             Some(c) => {
                 // Numeric
@@ -140,6 +146,7 @@ impl<'a> TokenIterator for Stream<'a> {
                     }
 
                     let keyword_or_ident = match ident.as_str() {
+                        "import"    => Token::Import,
                         "let"       => Token::Let,
                         "if"        => Token::If,
                         "elif"      => Token::Elif,
@@ -229,5 +236,32 @@ mod tokenizer_tests {
         
         assert!(token.is_err());
         assert!(token.unwrap_err().contains("unrecognized character '$' found."));
+    }
+
+    #[test]
+    fn test_import_statement_tokens() {
+        let lexer = Lexer::new("import path1::path2::sort;");
+        let expt_tokens = vec![
+            Token::Import,
+            Token::Identifier("path1".to_string()),
+            Token::DoubleColon,
+            Token::Identifier("path2".to_string()),
+            Token::DoubleColon,
+            Token::Identifier("sort".to_string()),
+            Token::Semicolon
+        ];
+
+        let mut stream = lexer.stream();
+        let mut token = stream.next();
+
+        assert!(token.is_ok());
+
+        let mut index = 0;
+
+        while token != Ok(Token::Semicolon) {
+            assert_eq!(token.unwrap(), *expt_tokens.get(index).unwrap());
+            index = index + 1;
+            token = stream.next();
+        }
     }
 }
