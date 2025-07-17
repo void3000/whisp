@@ -150,7 +150,6 @@ impl Evaluator for Interpreter {
             Operation::And => lhs_val.and(rhs_val),
             Operation::Or  => lhs_val.or(rhs_val),
         };
-
         Ok(result)
     }
 
@@ -246,6 +245,7 @@ impl Evaluator for Interpreter {
         while matches!(eval(self, cond)?, Value::Bool(true)) {
             eval(self, body)?;
         }
+
         self.exit_scope();
     
         Ok(Value::Void(()))
