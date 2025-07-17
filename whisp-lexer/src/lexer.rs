@@ -29,25 +29,27 @@ impl<'a> TokenIterator for Stream<'a> {
     type Item = Token;
 
     fn next(&mut self) -> Result<Self::Item, String> {
-        // Skip whitespaces
-        while let Some(&c) = self.chars.peek() {
-            if c.is_whitespace() {
-                self.chars.next();
+        loop {
+            // Skip whitespace
+            while let Some(&c) = self.chars.peek() {
+                if c.is_whitespace() {
+                    self.chars.next();
+                } else {
+                    break;
+                }
+            }
+
+            // Skip comments starting with '#'
+            if let Some('#') = self.chars.peek().copied() {
+                while let Some(c) = self.chars.next() {
+                    if c == '\n' {
+                        break;
+                    }
+                }
             } else {
                 break;
             }
         }
-
-        // Skip line comments starting with '#'
-        while let Some('#') = self.chars.peek().copied() {
-            self.chars.next();
-            while let Some(c) = self.chars.next() {
-                if c == '\n' {
-                    break;
-                }
-            }
-        }
-
 
         let result = match self.chars.next() {
             Some('(') => Token::LParen,
@@ -273,6 +275,102 @@ mod tokenizer_tests {
             assert_eq!(token.unwrap(), *expt_tokens.get(index).unwrap());
             index = index + 1;
             token = stream.next();
+        }
+    }
+
+    #[test]
+    fn test_single_comment() {
+        let lexer = Lexer::new("
+            # This is a comment
+            let x = 10;
+        ");
+        let expected = vec![
+            Token::Let,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::Int(10),
+            Token::Semicolon,
+            Token::Eof,
+        ];
+
+        let mut stream = lexer.stream();
+        for token in expected {
+            assert_eq!(stream.next().unwrap(), token);
+        }
+    }
+
+    #[test]
+    fn test_multiple_consecutive_comments() {
+        let lexer = Lexer::new("
+            # comment one
+            # comment two
+            let x = 1;
+        ");
+        let expected = vec![
+            Token::Let,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::Int(1),
+            Token::Semicolon,
+            Token::Eof,
+        ];
+
+        let mut stream = lexer.stream();
+        for token in expected {
+            assert_eq!(stream.next().unwrap(), token);
+        }
+    }
+
+    #[test]
+    fn test_comment_between_tokens() {
+        let lexer = Lexer::new("
+            let x = 1; # a comment here
+            x + 2;
+        ");
+        let expected = vec![
+            Token::Let,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::Int(1),
+            Token::Semicolon,
+            Token::Identifier("x".to_string()),
+            Token::Add,
+            Token::Int(2),
+            Token::Semicolon,
+            Token::Eof,
+        ];
+
+        let mut stream = lexer.stream();
+        for token in expected {
+            assert_eq!(stream.next().unwrap(), token);
+        }
+    }
+
+    #[test]
+    fn test_comment_inside_function() {
+        let lexer = Lexer::new("
+            def f() {
+                # comment inside body
+                # comment inside body
+                return 42;
+            }
+        ");
+        let expected = vec![
+            Token::Def,
+            Token::Identifier("f".to_string()),
+            Token::LParen,
+            Token::RParen,
+            Token::LBrace,
+            Token::Return,
+            Token::Int(42),
+            Token::Semicolon,
+            Token::RBrace,
+            Token::Eof,
+        ];
+
+        let mut stream = lexer.stream();
+        for token in expected {
+            assert_eq!(stream.next().unwrap(), token);
         }
     }
 }
