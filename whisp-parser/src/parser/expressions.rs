@@ -81,8 +81,7 @@ where
         self.parse_comp_expr_tail(lhs)
     }
 
-    /// CompExprTail ::= ('==' | '<' | '>' | '<=' | '>=') AddSubExpr CompExprTail 
-    ///                | ε
+    /// CompExprTail ::= ('==' | '<' | '>' | '<=' | '>=') AddSubExpr CompExprTail | ε
     pub fn parse_comp_expr_tail(
         &mut self, 
         mut lhs: ASTNode
@@ -98,8 +97,8 @@ where
                 Token::Equal => Operation::Eq,
                 Token::GreaterEqual => Operation::Ge,
                 Token::GreaterThan  => Operation::Gt,
-                Token::LessThan     => Operation::Le,
-                Token::LessEqual    => Operation::Lt,
+                Token::LessThan     => Operation::Lt,
+                Token::LessEqual    => Operation::Le,
                 _ => unreachable!(),
             };
 
@@ -267,8 +266,8 @@ where
             Token::Equal        => Operation::Eq,
             Token::GreaterEqual => Operation::Ge,
             Token::GreaterThan  => Operation::Gt,
-            Token::LessThan     => Operation::Le,
-            Token::LessEqual    => Operation::Lt,
+            Token::LessThan     => Operation::Lt,
+            Token::LessEqual    => Operation::Le,
             _ => return Err(format!("Expected comparison operator, found {:?}", self.peek())),
         };
         self.advance();
