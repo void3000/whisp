@@ -38,6 +38,17 @@ impl<'a> TokenIterator for Stream<'a> {
             }
         }
 
+        // Skip line comments starting with '#'
+        while let Some('#') = self.chars.peek().copied() {
+            self.chars.next();
+            while let Some(c) = self.chars.next() {
+                if c == '\n' {
+                    break;
+                }
+            }
+        }
+
+
         let result = match self.chars.next() {
             Some('(') => Token::LParen,
             Some(')') => Token::RParen,
@@ -110,7 +121,7 @@ impl<'a> TokenIterator for Stream<'a> {
                     Some(':') => Token::DoubleColon,
                     _ => return Err("Unexpected single ':'.".to_string())
                 }
-            }
+            },
             None => Token::Eof,
             Some(c) => {
                 // Numeric
