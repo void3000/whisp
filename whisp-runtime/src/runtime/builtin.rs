@@ -1,5 +1,5 @@
 use crate::environment::Environment;
-use crate::value::Value;
+use crate::object::WhispObj;
 
 use whisp_parser::symbol::{ SymbolTable, SymbolInfo };
 use std::rc::Rc;
@@ -18,7 +18,7 @@ use std::rc::Rc;
 /// (5) Rust doesn't support trait objects of generic traits.
 pub trait BuiltInFunction {
     fn name(&self) -> &'static str;
-    fn call(&self, arg: Vec<Value>) -> Value;
+    fn call(&self, arg: Vec<WhispObj>) -> WhispObj;
 }
 
 pub fn register_builtin(
@@ -28,7 +28,7 @@ pub fn register_builtin(
 ) {
     env.put(
         fun.name().to_string(), 
-        Value::BuiltInFunction {
+        WhispObj::BuiltInFunction {
             callback: fun.clone()
         }
     );
@@ -57,11 +57,11 @@ impl BuiltInFunction for PrintFn {
         "print"
     }
 
-    fn call(&self, args: Vec<Value>) -> Value {
+    fn call(&self, args: Vec<WhispObj>) -> WhispObj {
         for arg in args {
             println!("{arg}");
         }
-        Value::Void(())
+        WhispObj::Void(())
     }
 }
 
@@ -70,7 +70,7 @@ impl BuiltInFunction for MaxFn {
         "max"
     }
 
-    fn call(&self, args: Vec<Value>) -> Value {
+    fn call(&self, args: Vec<WhispObj>) -> WhispObj {
         if args.len() != 2 {
             panic!("Expected two paramters but got {}.", args.len());
         }
@@ -79,7 +79,7 @@ impl BuiltInFunction for MaxFn {
         let rhs = &args[1];
 
         match (lhs, rhs) {
-            (Value::Int(a), Value::Int(b)) => {
+            (WhispObj::Int(a), WhispObj::Int(b)) => {
                 if a > b {
                     lhs.clone()
                 } else {
@@ -96,7 +96,7 @@ impl BuiltInFunction for MinFn {
         "min"
     }
 
-    fn call(&self, args: Vec<Value>) -> Value {
+    fn call(&self, args: Vec<WhispObj>) -> WhispObj {
         if args.len() != 2 {
             panic!("Expected two paramters but got {}.", args.len());
         }
@@ -105,7 +105,7 @@ impl BuiltInFunction for MinFn {
         let rhs = &args[1];
 
         match (lhs, rhs) {
-            (Value::Int(a), Value::Int(b)) => {
+            (WhispObj::Int(a), WhispObj::Int(b)) => {
                 if a < b {
                     lhs.clone()
                 } else {
@@ -121,7 +121,7 @@ impl BuiltInFunction for MinFn {
 #[cfg(test)]
 mod test_builtin_functions {
     use super::*;
-    use crate::value::Value;
+    use crate::object::WhispObj;
     use crate::environment::Environment;
 
     #[test]
@@ -132,13 +132,13 @@ mod test_builtin_functions {
         register_builtin(Rc::new(MaxFn), &mut env, &mut symbols);
         
         let builtin_fun = env.get("max");
-        let args = vec![Value::Int(3), Value::Int(4)];
+        let args = vec![WhispObj::Int(3), WhispObj::Int(4)];
 
         let result = match builtin_fun {
-            Some(Value::BuiltInFunction { callback}) =>  callback.call(args),
-            _ => Value::Void(())
+            Some(WhispObj::BuiltInFunction { callback}) =>  callback.call(args),
+            _ => WhispObj::Void(())
         };
 
-        assert_eq!(result, Value::Int(4));
+        assert_eq!(result, WhispObj::Int(4));
     }
 }

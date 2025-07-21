@@ -1,7 +1,7 @@
 use whisp_runtime::runtime::interpreter::Interpreter;
 use whisp_runtime::runtime::evaluator::eval;
 use whisp_runtime::environment::Environment;
-use whisp_runtime::value::Value;
+use whisp_runtime::object::WhispObj;
 use whisp_parser::tree::ASTNode;
 use whisp_parser::ops::Operation;
 
@@ -14,7 +14,7 @@ fn test_interpreter_numeric() {
     let result = eval(&interpreter, &ast);
     
     match result {
-        Ok(Value::Int(val)) => assert_eq!(val, 6),
+        Ok(WhispObj::Int(val)) => assert_eq!(val, 6),
         _ => panic!("Expected an integer value"),
     }
 }
@@ -28,7 +28,7 @@ fn test_interpreter_string() {
     let result = eval(&interpreter, &ast);
 
     match result {
-        Ok(Value::Str(val)) => assert_eq!(val, "hello"),
+        Ok(WhispObj::Str(val)) => assert_eq!(val, "hello"),
         _ => panic!("Expected a string value"),
     }
 }
@@ -42,7 +42,7 @@ fn test_interpreter_boolean() {
     let result = eval(&interpreter, &ast);
 
     match result {
-        Ok(Value::Bool(val)) => assert_eq!(val, true),
+        Ok(WhispObj::Bool(val)) => assert_eq!(val, true),
         _ => panic!("Expected a booelan value"),
     }
 }
@@ -60,7 +60,7 @@ fn test_interpreter_binary_op_addition() {
     let result = eval(&interpreter, &ast);
 
     match result {
-        Ok(Value::Int(val)) => assert_eq!(val, 7),
+        Ok(WhispObj::Int(val)) => assert_eq!(val, 7),
         _ => panic!("Expected an integer value from addition"),
     }
 }

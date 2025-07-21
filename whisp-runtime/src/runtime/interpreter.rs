@@ -3,7 +3,7 @@ use std::cell::RefCell;
 
 use crate::runtime::evaluator::{ Evaluator, eval };
 use crate::environment::Environment;
-use crate::value::{ Value };
+use crate::object::{ WhispObj };
 
 use whisp_parser::tree::ASTNode;
 use whisp_parser::ops::Operation;
@@ -28,15 +28,15 @@ impl Interpreter {
         Interpreter { env }
     }
 
-    pub fn lookup(&self, name: &str) -> Option<Value> {
+    pub fn lookup(&self, name: &str) -> Option<WhispObj> {
         self.env.borrow_mut().get(name)
     }
 
-    pub fn register(&mut self, key: String, value: Value) {
+    pub fn register(&mut self, key: String, value: WhispObj) {
         self.env.borrow_mut().put(key, value)
     }
 
-    pub fn update(&mut self, key: &str, value: Value) -> Result<(), String> {
+    pub fn update(&mut self, key: &str, value: WhispObj) -> Result<(), String> {
         self.env.borrow_mut().update(key, value)
     }
 
@@ -50,34 +50,34 @@ impl Interpreter {
 }
 
 impl Evaluator for Interpreter {
-    fn eval_str(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_str(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::Str { value } = node 
         else {
             return Err("Expected a valid string.".to_string());
         };
 
-        Ok(Value::Str(value.clone()))
+        Ok(WhispObj::Str(value.clone()))
     }
 
-    fn eval_numeric(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_numeric(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::Numeric { value } = node 
         else {
             return Err("Expected a valid numeric.".to_string());
         };
 
-        Ok(Value::Int(*value))
+        Ok(WhispObj::Int(*value))
     }
 
-    fn eval_boolean(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_boolean(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::Bool { value } = node 
         else {
             return Err("Expected a valid boolean.".to_string());
         };
 
-        Ok(Value::Bool(*value))
+        Ok(WhispObj::Bool(*value))
     }
 
-    fn eval_array(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_array(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::Array { elements } = node 
         else {
             return Err("Expected a valid array.".to_string());
@@ -89,10 +89,10 @@ impl Evaluator for Interpreter {
             values.push(value);
         }
         
-        Ok(Value::Array(values))
+        Ok(WhispObj::Array(values))
     }
 
-    fn eval_array_index(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_array_index(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::ArrayIndex { 
             arr, 
             index 
@@ -105,7 +105,7 @@ impl Evaluator for Interpreter {
         let index_eval = eval(self, index)?;
         
         match (arr_eval, index_eval) {
-            (Value::Array(arr), Value::Int(idx)) => {
+            (WhispObj::Array(arr), WhispObj::Int(idx)) => {
                 let value = arr.get(idx as usize)
                         .ok_or_else(|| format!("Index {} out of bound.", idx))?
                         .clone();
@@ -115,7 +115,7 @@ impl Evaluator for Interpreter {
         }
     }
 
-    fn eval_identifier(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_identifier(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         match node {
             ASTNode::Identifier { name } => {
                 self.lookup(name)
@@ -132,7 +132,7 @@ impl Evaluator for Interpreter {
         op: &Operation,
         lhs: &ASTNode,
         rhs: &ASTNode,
-    ) -> Result<Value, String> {
+    ) -> Result<WhispObj, String> {
         let lhs_val = eval(self, lhs)?;
         let rhs_val = eval(self, rhs)?;
 
@@ -153,7 +153,7 @@ impl Evaluator for Interpreter {
         Ok(result)
     }
 
-    fn eval_letbinding(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_letbinding(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::LetBinding { 
             identifier, 
             body 
@@ -169,10 +169,10 @@ impl Evaluator for Interpreter {
         let eval_value = eval(self, body)?;
         self.register(name.clone(), eval_value);
 
-        Ok(Value::Void(()))
+        Ok(WhispObj::Void(()))
     }
 
-    fn eval_assgin(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_assgin(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::Assign { 
             identifier, 
             body 
@@ -192,7 +192,7 @@ impl Evaluator for Interpreter {
                 let index_val = eval(self, index)?;
 
                 match (array_val, index_val) {
-                    (Value::Array(mut vec), Value::Int(i)) => {
+                    (WhispObj::Array(mut vec), WhispObj::Int(i)) => {
                         let i = i as usize;
                         if i >= vec.len() {
                             return Err("Index out of bounds".to_string());
@@ -202,7 +202,7 @@ impl Evaluator for Interpreter {
 
                         match arr.as_ref() {
                             ASTNode::Identifier { name } => {
-                                self.update(name, Value::Array(vec))?;
+                                self.update(name, WhispObj::Array(vec))?;
                             }
                             _ => return Err("Only assignment to direct array variables is supported".to_string()),
                         }
@@ -216,12 +216,12 @@ impl Evaluator for Interpreter {
         Ok(eval_value)
     }
 
-    fn eval_statements(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_statements(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::Statements { stmts } = node 
         else {
             return Err("Expected a valid sequence of statements.".to_string());
         };
-        let mut last_value = Value::Void(());
+        let mut last_value = WhispObj::Void(());
 
         for stmt in stmts {
             last_value = eval(self, stmt)?;
@@ -231,7 +231,7 @@ impl Evaluator for Interpreter {
 
     }
 
-    fn eval_whileloop(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_whileloop(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::WhileLoop { 
             cond, 
             body 
@@ -242,16 +242,16 @@ impl Evaluator for Interpreter {
         
         self.enter_scope();
 
-        while matches!(eval(self, cond)?, Value::Bool(true)) {
+        while matches!(eval(self, cond)?, WhispObj::Bool(true)) {
             eval(self, body)?;
         }
 
         self.exit_scope();
     
-        Ok(Value::Void(()))
+        Ok(WhispObj::Void(()))
     }
 
-    fn eval_forloop(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_forloop(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::ForLoop { 
             itr, 
             var, 
@@ -262,7 +262,7 @@ impl Evaluator for Interpreter {
         };
 
         let iterable = eval(self, itr)?;
-        let Value::Array(elements) = iterable 
+        let WhispObj::Array(elements) = iterable 
         else {
             return Err("Expected an iterable for the for-loop.".to_string());
         };
@@ -279,10 +279,10 @@ impl Evaluator for Interpreter {
         }
         self.exit_scope();
 
-        Ok(Value::Void(()))
+        Ok(WhispObj::Void(()))
     }
 
-    fn eval_ifstatement(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_ifstatement(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::IfStatement { 
             cond,
             then_branch,
@@ -293,27 +293,27 @@ impl Evaluator for Interpreter {
         };
 
         match eval(self, cond)? {
-            Value::Bool(true) => {
+            WhispObj::Bool(true) => {
                 self.enter_scope();
                 let result = eval(self, then_branch);
                 self.exit_scope();
                 result
             },
-            Value::Bool(false) => {
+            WhispObj::Bool(false) => {
                 if let Some(else_branch) = else_branch {
                     self.enter_scope();
                     let result = eval(self, else_branch);
                     self.exit_scope();
                     result
                 } else {
-                    Ok(Value::Void(()))
+                    Ok(WhispObj::Void(()))
                 }
             }
             _ => Err("If statement condition must be a boolean expression.".to_string()),
         }
     }
 
-    fn eval_function_def(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_function_def(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::FunctionDef {
             name,
             params,
@@ -332,26 +332,26 @@ impl Evaluator for Interpreter {
         if !all_valid_parameters {
             return Err("All function parameters must be identifiers.".to_string());
         }
-        let fun_defition = Value::Function {
+        let fun_defition = WhispObj::Function {
             params: params.clone(),
             body: body.clone()
         };
 
         self.register(name.clone(), fun_defition);
-        Ok(Value::Void(()))
+        Ok(WhispObj::Void(()))
     }
 
-    fn eval_return(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_return(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         match node {
             ASTNode::Return { value } => {
                 let eval_value = eval(self, value)?;
-                Ok(Value::Return(Box::new(eval_value)))
+                Ok(WhispObj::Return(Box::new(eval_value)))
             },
             _ => Err("Expected a valid return statement.".to_string())
         }
     }
 
-    fn eval_function_call(&mut self, node: &ASTNode) -> Result<Value, String> {
+    fn eval_function_call(&mut self, node: &ASTNode) -> Result<WhispObj, String> {
         let ASTNode::Call {
             name,
             args 
@@ -360,13 +360,13 @@ impl Evaluator for Interpreter {
             return Err("Expected a valid function call.".to_string());
         };
         let eval_fun = eval(self, name)?;
-        let eval_args: Vec<Value> = args
+        let eval_args: Vec<WhispObj> = args
                 .iter()
                 .map(|arg| eval(self, arg).unwrap())
                 .collect();
 
         match eval_fun {
-            Value::Function { params, body } => {
+            WhispObj::Function { params, body } => {
                 if eval_args.len() != params.len() {
                     return Err(format!(
                         "Expected {} parameters, but got {}", params.len(), eval_args.len()
@@ -387,11 +387,11 @@ impl Evaluator for Interpreter {
 
                 self.exit_scope();
                 match result {
-                    Value::Return(inner) => Ok(*inner),
-                    _ => Ok(Value::Void(())),
+                    WhispObj::Return(inner) => Ok(*inner),
+                    _ => Ok(WhispObj::Void(())),
                 }
             },
-            Value::BuiltInFunction { callback } => {
+            WhispObj::BuiltInFunction { callback } => {
                 Ok(callback.call(eval_args))
             },
             _ => Err("Error encountred while evaluating function call.".to_string())
@@ -403,7 +403,7 @@ impl Evaluator for Interpreter {
 // #[cfg(test)]
 // mod test_interpreter {
 //     use super::*;
-//     use crate::value::Value;
+//     use crate::object::WhispObj;
 //     use crate::environment::Environment;
 
 //     #[test]
@@ -415,7 +415,7 @@ impl Evaluator for Interpreter {
 
 //         assert!(result.is_ok());
 //         match result {
-//             Ok(Value::Int(val)) => assert_eq!(val, 7),
+//             Ok(WhispObj::Int(val)) => assert_eq!(val, 7),
 //             _ => panic!("Expected numeric value 7"),
 //         }
 //     }
@@ -435,7 +435,7 @@ impl Evaluator for Interpreter {
 //         let result = eval(&mut interpreter, &ast);
 
 //         assert!(result.is_ok());
-//         assert_eq!(result.unwrap(), Value::Int(2));
+//         assert_eq!(result.unwrap(), WhispObj::Int(2));
 //     }
 
 //     #[test]
@@ -469,7 +469,7 @@ impl Evaluator for Interpreter {
 //         let result = eval(&mut interpreter, &ast);
 
 //         assert!(result.is_ok());
-//         assert_eq!(env.get("x"), Some(Value::Int(42)));
+//         assert_eq!(env.get("x"), Some(WhispObj::Int(42)));
 //     }
 
 //     #[test]
@@ -510,7 +510,7 @@ impl Evaluator for Interpreter {
 //         let result = eval(&mut interpreter, &ast);
 
 //         assert!(result.is_ok());
-//         assert_eq!(result.unwrap(), Value::Int(30));
+//         assert_eq!(result.unwrap(), WhispObj::Int(30));
 //     }
 
 //     #[test]
@@ -541,7 +541,7 @@ impl Evaluator for Interpreter {
     
 //         let result = eval(&mut interpreter, &ast);
 //         assert!(result.is_ok());
-//         assert_eq!(env.get("x"), Some(Value::Int(3)));
+//         assert_eq!(env.get("x"), Some(WhispObj::Int(3)));
 //     }
 
 //     #[test]
@@ -574,7 +574,7 @@ impl Evaluator for Interpreter {
 //         let result = eval(&mut interpreter, &ast);
 
 //         assert!(result.is_ok());
-//         assert_eq!(env.get("sum"), Some(Value::Int(6)));
+//         assert_eq!(env.get("sum"), Some(WhispObj::Int(6)));
 //     }
 
 //     #[test]
@@ -606,7 +606,7 @@ impl Evaluator for Interpreter {
 //         let result = eval(&mut interpreter, &ast);
     
 //         assert!(result.is_ok());
-//         assert_eq!(env.get("x"), Some(Value::Int(7)));
+//         assert_eq!(env.get("x"), Some(WhispObj::Int(7)));
 //     }
 
 //     #[test]
@@ -634,7 +634,7 @@ impl Evaluator for Interpreter {
 //         let result = eval(&mut interpreter, &ast);
 
 //         assert!(result.is_ok());
-//         assert_eq!(result.unwrap(), Value::Str("Hello world!".to_string()));
+//         assert_eq!(result.unwrap(), WhispObj::Str("Hello world!".to_string()));
 //     }
 
 //     #[test]
@@ -670,6 +670,6 @@ impl Evaluator for Interpreter {
 //         let result = eval(&mut interpreter, &ast);
 
 //         assert!(result.is_ok());
-//         assert_eq!(result.unwrap(), Value::Int(10));
+//         assert_eq!(result.unwrap(), WhispObj::Int(10));
 //     }
 // }

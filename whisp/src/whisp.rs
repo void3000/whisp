@@ -21,12 +21,12 @@ use whisp_runtime::{
         evaluator::Evaluator, 
         interpreter::Interpreter
     },
-    value::Value,
+    object::WhispObj,
 };
 
 
 type ParseResponse = ASTNode;
-type EvalResponse  = Value;
+type EvalResponse  = WhispObj;
 type ResponseErr   = String;
 
 pub struct Whisp {
