@@ -12,7 +12,7 @@ class ModuleObject {
   +spec: ModuleSpec
   +loader: ModuleLoader
   +metadata: Metadata
-  +scope: HashMap<str, Value>
+  +scope: HashMap<str, WhispObj>
 }
 
 class ModuleSpec {

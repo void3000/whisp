@@ -1,12 +1,12 @@
 use std::collections::HashMap;
-use crate::value::Value;
+use crate::object::WhispObj;
 
 #[derive(Clone)]
 pub struct Environment {
     /// Represents the environment for variable bindings in Whisp.
     ///
     /// This structure implements **lexical scoping** via a stack of scopes,
-    /// where each scope is represented by a `HashMap<String, Value>`. New
+    /// where each scope is represented by a `HashMap<String, WhispObj>`. New
     /// scopes are pushed onto the stack during function calls or blocks, and
     /// popped afterward.
     ///
@@ -43,7 +43,7 @@ pub struct Environment {
     ///
     /// Although Whisp supports dynamic scoping for certain constructs, its primary
     /// model is lexical.
-    pub stack: Vec<HashMap<String, Value>>,
+    pub stack: Vec<HashMap<String, WhispObj>>,
 }
 
 impl Environment {
@@ -62,13 +62,13 @@ impl Environment {
         self.stack.pop();
     }
 
-    pub fn put(&mut self, name: String, value: Value) {
+    pub fn put(&mut self, name: String, value: WhispObj) {
         if let Some(scope) = self.stack.last_mut() {
             scope.insert(name, value);
         }
     }
 
-    pub fn get(&mut self, name: &str) -> Option<Value> {
+    pub fn get(&mut self, name: &str) -> Option<WhispObj> {
         for scope in self.stack.iter().rev() {
             if let Some(val) = scope.get(name) {
                 return Some(val.clone());
@@ -77,7 +77,7 @@ impl Environment {
         None
     }
 
-    pub fn update(&mut self, name: &str, value: Value) -> Result<(), String> {
+    pub fn update(&mut self, name: &str, value: WhispObj) -> Result<(), String> {
         for scope in self.stack.iter_mut().rev() {
             if scope.contains_key(name) {
                 scope.insert(name.to_string(), value);

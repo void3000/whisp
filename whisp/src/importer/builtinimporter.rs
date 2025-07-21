@@ -4,7 +4,7 @@ use crate::module::spec::ModuleSpec;
 use crate::whisp::Whisp;
 
 use whisp_parser::tree::ASTNode;
-use whisp_runtime::value::Value;
+use whisp_runtime::object::WhispObj;
 
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -130,7 +130,7 @@ mod tests {
         assert!(scope.contains_key("maximum"));
 
         match scope.get("maximum") {
-            Some(Value::Function { .. }) => { 
+            Some(WhispObj::Function { .. }) => { 
                 // Ok we are not going do anything. At least 
                 // we know that the function value is pesent.
             }
